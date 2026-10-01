@@ -3228,18 +3228,28 @@ function updateOrderStatusSteps(
 ) {
 
     const normalized =
-        String(status || '')
-            .trim()
-            .toLowerCase();
+        normalizeOrderStatus(
+            status
+        );
+
 
     const receivedStep =
-        document.querySelector('[data-step="received"]');
+        document.querySelector(
+            '[data-step="received"]'
+        );
+
 
     const preparingStep =
-        document.querySelector('[data-step="preparing"]');
+        document.querySelector(
+            '[data-step="preparing"]'
+        );
+
 
     const completedStep =
-        document.querySelector('[data-step="completed"]');
+        document.querySelector(
+            '[data-step="completed"]'
+        );
+
 
     [
         receivedStep,
@@ -3247,30 +3257,82 @@ function updateOrderStatusSteps(
         completedStep
     ]
     .filter(Boolean)
-    .forEach(step => {
-        step.classList.remove('active', 'completed');
-    });
+    .forEach(
+        step => {
 
-    if (normalized === 'new') {
-        receivedStep?.classList.add('active');
+            step.classList.remove(
+                "active",
+                "completed"
+            );
+
+        }
+    );
+
+
+    if (
+        normalized ===
+        "New"
+    ) {
+
+        receivedStep?.classList.add(
+            "active"
+        );
+
         return;
+
     }
 
-    if (normalized === 'preparing') {
-        receivedStep?.classList.add('completed');
-        preparingStep?.classList.add('active');
+
+    if (
+        normalized ===
+        "Preparing"
+    ) {
+
+        receivedStep?.classList.add(
+            "completed"
+        );
+
+        preparingStep?.classList.add(
+            "active"
+        );
+
         return;
+
     }
 
-    if (normalized === 'completed') {
-        receivedStep?.classList.add('completed');
-        preparingStep?.classList.add('completed');
-        completedStep?.classList.add('active', 'completed');
+
+    if (
+        normalized ===
+        "Completed"
+    ) {
+
+        receivedStep?.classList.add(
+            "completed"
+        );
+
+        preparingStep?.classList.add(
+            "completed"
+        );
+
+        completedStep?.classList.add(
+            "active",
+            "completed"
+        );
+
         return;
+
     }
 
-    if (normalized === 'cancelled') {
-        receivedStep?.classList.add('completed');
+
+    if (
+        normalized ===
+        "Cancelled"
+    ) {
+
+        receivedStep?.classList.add(
+            "completed"
+        );
+
     }
 
 }
