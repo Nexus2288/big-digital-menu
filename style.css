@@ -613,6 +613,58 @@ img {
 }
 
 
+
+/* =========================================================
+   MENU ACTION BUTTONS — MATCHES CUSTOMER SCRIPT
+========================================================= */
+
+.add-item-button {
+  min-width: 70px;
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid #222;
+  border-radius: 10px;
+  background: #171717;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.add-item-button:active {
+  transform: scale(0.96);
+}
+
+.add-item-button:hover {
+  background: #292929;
+}
+
+.quantity-value {
+  min-width: 27px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.menu-card.is-unavailable {
+  opacity: 0.62;
+}
+
+.menu-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 34px;
+  margin-top: 12px;
+}
+
+@media (min-width: 980px) {
+  .add-item-button:hover {
+    background: #292929;
+  }
+}
+
 /* =========================================================
    EMPTY STATE
 ========================================================= */
@@ -1040,7 +1092,8 @@ img {
     font-size: 14px;
   }
 
-  .add-button {
+  .add-button,
+  .add-item-button {
     min-width: 61px;
     padding-left: 10px;
     padding-right: 10px;
