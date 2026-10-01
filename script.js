@@ -1858,6 +1858,11 @@ function openCart() {
     DOM.cartOverlay.hidden =
         false;
 
+    if (DOM.cartDrawer) {
+        DOM.cartDrawer.classList.add(
+            "open"
+        );
+    }
 
     requestAnimationFrame(
         () => {
@@ -1885,6 +1890,11 @@ function closeCart() {
         "show"
     );
 
+    if (DOM.cartDrawer) {
+        DOM.cartDrawer.classList.remove(
+            "open"
+        );
+    }
 
     setTimeout(
         () => {
@@ -3957,5 +3967,4 @@ window.addEventListener(
 
     }
 );
-
 
