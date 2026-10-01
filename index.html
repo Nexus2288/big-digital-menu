@@ -2,378 +2,150 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  />
-
-  <meta
-    name="theme-color"
-    content="#111111"
-  />
-
-  <meta
-    name="description"
-    content="Digital menu and ordering experience"
-  />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="description" content="Digital menu and ordering experience" />
   <title>Love Over Coffee | Digital Menu</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
-    rel="stylesheet"
-  />
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  />
+  <!-- Part 4 only: checkout + order-status styling. style.css is unchanged. -->
+  <style>
+    .loc4-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.58)}
+    .loc4-overlay[hidden]{display:none!important}
+    .loc4-panel{width:min(100%,560px);max-height:92vh;overflow:auto;background:#fff;color:#171717;border-radius:26px 26px 0 0;padding:22px;box-shadow:0 -20px 60px rgba(0,0,0,.22)}
+    .loc4-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:20px}
+    .loc4-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;color:#888;margin-bottom:5px}
+    .loc4-title{margin:0;font-family:"Playfair Display",serif;font-size:26px}
+    .loc4-close{border:0;background:#f2f2f2;width:38px;height:38px;border-radius:50%;font-size:23px;cursor:pointer}
+    .loc4-field{margin-bottom:14px}.loc4-field label{display:block;margin-bottom:7px;font-size:13px;font-weight:600}
+    .loc4-field input,.loc4-field textarea{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:13px 14px;font:inherit;outline:none}
+    .loc4-field textarea{min-height:82px;resize:vertical}.loc4-readonly{background:#f7f7f7}
+    .loc4-total{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-top:1px solid #eee;margin-top:5px;font-size:17px}.loc4-total strong{font-size:21px}
+    .loc4-primary{width:100%;border:0;border-radius:14px;padding:15px;background:#171717;color:#fff;font:inherit;font-weight:700;cursor:pointer}.loc4-primary:disabled{opacity:.55;cursor:not-allowed}
+    .loc4-card{background:#fafafa;border:1px solid #e8e8e8;border-radius:18px;padding:18px;margin-bottom:18px}.loc4-top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.loc4-order{font-weight:700;font-size:18px}.loc4-table{color:#777;font-size:13px;margin-top:4px}.loc4-current{text-align:right;font-weight:700;color:#222}.loc4-message{color:#666;font-size:14px;line-height:1.5;margin:14px 0 18px}
+    .loc4-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.loc4-progress-step{text-align:center;font-size:11px;color:#999}.loc4-dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin:0 auto 6px;background:#e9e9e9;color:#777;font-size:13px;font-weight:700}.loc4-progress-step.is-active{color:#171717;font-weight:700}.loc4-progress-step.is-active .loc4-dot{background:#171717;color:#fff}
+    .loc4-items{border-top:1px solid #eee;margin-top:18px;padding-top:10px}.order-status-item{display:flex;justify-content:space-between;gap:15px;padding:9px 0;font-size:13px}.loc4-summary{border-top:1px solid #eee;margin-top:8px;padding-top:10px}.loc4-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#666}.loc4-row.final{color:#171717;font-size:16px;font-weight:700;padding-top:9px}.loc4-secondary{width:100%;border:1px solid #ddd;border-radius:14px;padding:13px;background:#fff;color:#171717;font:inherit;font-weight:600;cursor:pointer;margin-top:10px}
+    @media (min-width:700px){.loc4-overlay{align-items:center;padding:24px}.loc4-panel{border-radius:26px;max-height:88vh}}
+  </style>
 </head>
 
 <body>
+<div id="app">
 
-  <!-- =========================
-       APP
-  ========================== -->
-
-  <div id="app">
-
-    <!-- =========================
-         HERO
-    ========================== -->
-
-    <header class="hero">
-
-      <div class="hero-overlay"></div>
-
-      <div class="hero-content">
-
-        <div class="brand-logo-wrap">
-          <img
-            id="cafeLogo"
-            class="cafe-logo"
-            src=""
-            alt="Cafe logo"
-            hidden
-          />
-
-          <div
-            id="logoFallback"
-            class="logo-fallback"
-          >
-            LOC
-          </div>
-        </div>
-
-        <p
-          id="cafeNameSmall"
-          class="hero-small-title"
-        >
-          LOVE OVER COFFEE
-        </p>
-
-        <h1 id="cafeName">
-          Love Over Coffee
-        </h1>
-
-        <p
-          id="cafeTagline"
-          class="hero-tagline"
-        >
-          Good food. Good coffee. Good moments.
-        </p>
-
-        <div class="table-badge">
-          <span class="table-icon">⌂</span>
-
-          <span>
-            Table
-            <strong id="tableNumber">
-              —
-            </strong>
-          </span>
-        </div>
-
+  <header class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="brand-logo-wrap">
+        <img id="cafeLogo" class="cafe-logo" src="" alt="Cafe logo" hidden />
+        <div id="logoFallback" class="logo-fallback">LOC</div>
       </div>
-
-    </header>
-
-
-    <!-- =========================
-         MAIN
-    ========================== -->
-
-    <main class="main-content">
-
-      <!-- SEARCH -->
-
-      <section class="search-section">
-
-        <div class="search-box">
-
-          <span class="search-icon">
-            ⌕
-          </span>
-
-          <input
-            id="searchInput"
-            type="search"
-            placeholder="Search menu..."
-            autocomplete="off"
-          />
-
-          <button
-            id="clearSearch"
-            class="clear-search"
-            type="button"
-            aria-label="Clear search"
-            hidden
-          >
-            ×
-          </button>
-
-        </div>
-
-      </section>
-
-
-      <!-- CATEGORY NAVIGATION -->
-
-      <section class="category-section">
-
-        <div
-          id="categoryList"
-          class="category-list"
-        ></div>
-
-      </section>
-
-
-      <!-- ACTIVE ORDER -->
-
-      <section
-        id="activeOrderBanner"
-        class="active-order-banner"
-        hidden
-      >
-
-        <div class="active-order-left">
-
-          <div class="active-order-icon">
-            ✓
-          </div>
-
-          <div>
-
-            <span class="active-order-label">
-              Your Order
-            </span>
-
-            <strong id="activeOrderText">
-              Order #—
-            </strong>
-
-          </div>
-
-        </div>
-
-        <button
-          id="viewOrderButton"
-          class="active-order-button"
-          type="button"
-        >
-          View Status
-        </button>
-
-      </section>
-
-
-      <!-- MENU -->
-
-      <section class="menu-section">
-
-        <div
-          id="menuContainer"
-          class="menu-container"
-        ></div>
-
-        <div
-          id="emptyMenu"
-          class="empty-state"
-          hidden
-        >
-          <div class="empty-icon">
-            ☕
-          </div>
-
-          <h3>
-            Nothing found
-          </h3>
-
-          <p>
-            Try another search or category.
-          </p>
-        </div>
-
-      </section>
-
-    </main>
-
-
-    <!-- =========================
-         CART BAR
-    ========================== -->
-
-    <div
-      id="cartBar"
-      class="cart-bar"
-      hidden
-    >
-
-      <div class="cart-summary">
-
-        <span
-          id="cartItemCount"
-          class="cart-item-count"
-        >
-          0 items
-        </span>
-
-        <strong
-          id="cartTotal"
-          class="cart-total"
-        >
-          ₹0
-        </strong>
-
-      </div>
-
-      <button
-        id="viewCartButton"
-        class="view-cart-button"
-        type="button"
-      >
-        View Cart
-        <span>→</span>
-      </button>
-
+      <p id="cafeNameSmall" class="hero-small-title">LOVE OVER COFFEE</p>
+      <h1 id="cafeName">Love Over Coffee</h1>
+      <p id="cafeTagline" class="hero-tagline">Good food. Good coffee. Good moments.</p>
+      <div class="table-badge"><span class="table-icon">⌂</span><span>Table <strong id="tableNumber">—</strong></span></div>
     </div>
+  </header>
 
-
-    <!-- =========================
-         CART DRAWER
-    ========================== -->
-
-    <div
-      id="cartOverlay"
-      class="cart-overlay"
-      hidden
-    ></div>
-
-    <aside
-      id="cartDrawer"
-      class="cart-drawer"
-      aria-hidden="true"
-    >
-
-      <div class="drawer-header">
-
-        <div>
-
-          <span class="drawer-eyebrow">
-            YOUR ORDER
-          </span>
-
-          <h2>
-            Cart
-          </h2>
-
-        </div>
-
-        <button
-          id="closeCart"
-          class="icon-button"
-          type="button"
-          aria-label="Close cart"
-        >
-          ×
-        </button>
-
+  <main class="main-content">
+    <section class="search-section">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" type="search" placeholder="Search menu..." autocomplete="off" />
+        <button id="clearSearch" class="clear-search" type="button" aria-label="Clear search" hidden>×</button>
       </div>
+    </section>
 
+    <section class="category-section"><div id="categoryList" class="category-list"></div></section>
 
-      <div
-        id="cartItems"
-        class="cart-items"
-      ></div>
-
-
-      <div
-        id="cartEmpty"
-        class="cart-empty"
-      >
-
-        <div class="cart-empty-icon">
-          🛒
-        </div>
-
-        <h3>
-          Your cart is empty
-        </h3>
-
-        <p>
-          Add something delicious from the menu.
-        </p>
-
+    <section id="activeOrderBanner" class="active-order-banner" hidden>
+      <div class="active-order-left">
+        <div class="active-order-icon">✓</div>
+        <div><span class="active-order-label">Your Order</span><strong id="activeOrderText">Order #—</strong></div>
       </div>
+      <button id="viewOrderButton" class="active-order-button" type="button">View Status</button>
+    </section>
 
-
-      <div class="cart-footer">
-
-        <div class="cart-total-row">
-
-          <span>
-            Total
-          </span>
-
-          <strong id="drawerTotal">
-            ₹0
-          </strong>
-
-        </div>
-
-        <button
-          id="checkoutButton"
-          class="checkout-button"
-          type="button"
-        >
-          Continue
-        </button>
-
+    <section class="menu-section">
+      <div id="menuContainer" class="menu-container"></div>
+      <div id="emptyMenu" class="empty-state" hidden>
+        <div class="empty-icon">☕</div><h3>Nothing found</h3><p>Try another search or category.</p>
       </div>
+    </section>
+  </main>
 
-    </aside>
-
-
-    <!-- =========================
-         TOAST
-    ========================== -->
-
-    <div
-      id="toast"
-      class="toast"
-      role="status"
-      aria-live="polite"
-    ></div>
-
+  <div id="cartBar" class="cart-bar" hidden>
+    <div class="cart-summary"><span id="cartItemCount" class="cart-item-count">0 items</span><strong id="cartTotal" class="cart-total">₹0</strong></div>
+    <button id="viewCartButton" class="view-cart-button" type="button">View Cart <span>→</span></button>
   </div>
 
+  <div id="cartOverlay" class="cart-overlay" hidden></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div><span class="drawer-eyebrow">YOUR ORDER</span><h2>Cart</h2></div>
+      <button id="closeCart" class="icon-button" type="button" aria-label="Close cart">×</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div id="cartEmpty" class="cart-empty"><div class="cart-empty-icon">🛒</div><h3>Your cart is empty</h3><p>Add something delicious from the menu.</p></div>
+    <div class="cart-footer">
+      <div class="cart-total-row"><span>Total</span><strong id="drawerTotal">₹0</strong></div>
+      <button id="checkoutButton" class="checkout-button" type="button">Continue</button>
+    </div>
+  </aside>
 
-  <script src="script.js"></script>
+  <!-- CHECKOUT -->
+  <div id="checkoutOverlay" class="loc4-overlay" hidden>
+    <section id="customerFormSection" class="loc4-panel" aria-label="Checkout">
+      <div class="loc4-head"><div><span class="loc4-eyebrow">CHECKOUT</span><h2 class="loc4-title">Complete your order</h2></div><button id="closeCheckout" class="loc4-close" type="button">×</button></div>
+      <form id="orderForm">
+        <div class="loc4-field"><label for="customerName">Your Name</label><input id="customerName" type="text" maxlength="80" autocomplete="name" placeholder="Enter your name" required /></div>
+        <div class="loc4-field"><label for="mobileNumber">Mobile Number</label><input id="mobileNumber" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="Enter mobile number" required /></div>
+        <div class="loc4-field"><label for="tableNumberInput">Table</label><input id="tableNumberInput" class="loc4-readonly" type="text" readonly /></div>
+        <div class="loc4-field"><label for="specialRequest">Special Request <span style="font-weight:400;color:#999">(optional)</span></label><textarea id="specialRequest" maxlength="300" placeholder="Anything the kitchen should know?"></textarea></div>
+        <div class="loc4-total"><span>Order Total</span><strong id="confirmOrderTotal">₹0</strong></div>
+        <button id="confirmOrderButton" class="loc4-primary" type="submit">Place Order</button>
+      </form>
+    </section>
+  </div>
 
+  <!-- CUSTOMER ORDER STATUS -->
+  <div id="orderStatusOverlay" class="loc4-overlay" hidden>
+    <section class="loc4-panel" aria-label="Order status">
+      <div class="loc4-head"><div><span class="loc4-eyebrow">ORDER STATUS</span><h2 class="loc4-title">Your order</h2></div><button id="closeOrderStatus" class="loc4-close" type="button">×</button></div>
+      <div class="loc4-card">
+        <div class="loc4-top">
+          <div><div id="orderStatusNumber" class="loc4-order">Order #—</div><div id="orderStatusTable" class="loc4-table">Table —</div></div>
+          <div id="orderStatusState" class="loc4-current">Order Received</div>
+        </div>
+        <div id="orderStatusMessage" class="loc4-message">Your order has been received by the cafe.</div>
+        <div id="orderStatusStep" class="loc4-progress">
+          <div class="loc4-progress-step is-active" data-step="received"><div class="loc4-dot">1</div>Received</div>
+          <div class="loc4-progress-step" data-step="preparing"><div class="loc4-dot">2</div>Preparing</div>
+          <div class="loc4-progress-step" data-step="completed"><div class="loc4-dot">3</div>Completed</div>
+        </div>
+        <div id="orderStatusItems" class="loc4-items"></div>
+        <div class="loc4-summary">
+          <div class="loc4-row"><span>Subtotal</span><strong id="orderStatusSubtotal">₹0</strong></div>
+          <div id="orderStatusDiscountRow" class="loc4-row" hidden><span>Discount</span><strong id="orderStatusDiscount">₹0</strong></div>
+          <div class="loc4-row final"><span>Total</span><strong id="orderStatusFinalTotal">₹0</strong></div>
+        </div>
+      </div>
+      <button id="statusDoneButton" class="loc4-secondary" type="button">Back to Menu</button>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="script.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.getElementById("statusDoneButton"),o=document.getElementById("orderStatusOverlay");
+  if(b&&o)b.addEventListener("click",function(){o.hidden=true});
+});
+</script>
 </body>
 </html>
