@@ -76,6 +76,9 @@ const state = {
     isSubmitting:
         false,
 
+    appliedCoupon:
+        null,
+
     orderStatusTimer:
         null
 
@@ -183,6 +186,27 @@ const DOM = {
 
     specialRequest:
         document.getElementById("specialRequest"),
+
+    couponInput:
+        document.getElementById("couponInput"),
+
+    applyCouponButton:
+        document.getElementById("applyCouponButton"),
+
+    couponMessage:
+        document.getElementById("couponMessage"),
+
+    confirmSubtotal:
+        document.getElementById("confirmSubtotal"),
+
+    confirmDiscountLabel:
+        document.getElementById("confirmDiscountLabel"),
+
+    confirmDiscount:
+        document.getElementById("confirmDiscount"),
+
+    nextCouponBox:
+        document.getElementById("nextCouponBox"),
 
     confirmOrderButton:
         document.getElementById("confirmOrderButton"),
@@ -1930,17 +1954,10 @@ function openCheckout() {
 
     closeCart();
 
-
-    if (
-        DOM.confirmOrderTotal
-    ) {
-
-        DOM.confirmOrderTotal.textContent =
-            formatMoney(
-                calculateCartSubtotal()
-            );
-
-    }
+    state.appliedCoupon = null;
+    if (DOM.couponInput) DOM.couponInput.value = "";
+    setCouponMessage("", "");
+    updateCheckoutTotals();
 
 
     if (
@@ -2002,6 +2019,63 @@ function closeCheckout() {
         250
     );
 
+}
+
+
+function setCouponMessage(message, type) {
+    if (!DOM.couponMessage) return;
+    DOM.couponMessage.textContent = message || "";
+    DOM.couponMessage.className = "coupon-message" + (type ? ` ${type}` : "");
+}
+
+function updateCheckoutTotals() {
+    const subtotal = calculateCartSubtotal();
+    const discount = Number(state.appliedCoupon?.discountAmount || 0);
+    const finalTotal = Math.max(0, subtotal - discount);
+
+    if (DOM.confirmSubtotal) DOM.confirmSubtotal.textContent = formatMoney(subtotal);
+    if (DOM.confirmDiscountLabel) DOM.confirmDiscountLabel.hidden = discount <= 0;
+    if (DOM.confirmDiscount) {
+        DOM.confirmDiscount.hidden = discount <= 0;
+        DOM.confirmDiscount.textContent = `−${formatMoney(discount)}`;
+    }
+    if (DOM.confirmOrderTotal) DOM.confirmOrderTotal.textContent = formatMoney(finalTotal);
+}
+
+async function applyCoupon() {
+    const code = String(DOM.couponInput?.value || "").trim().toUpperCase();
+    const subtotal = calculateCartSubtotal();
+
+    if (!code) {
+        state.appliedCoupon = null;
+        setCouponMessage("Enter a coupon code.", "error");
+        updateCheckoutTotals();
+        return;
+    }
+
+    if (DOM.applyCouponButton) DOM.applyCouponButton.disabled = true;
+    setCouponMessage("Checking coupon…", "");
+
+    try {
+        const result = await callApiPost("validateCoupon", { couponCode: code, orderTotal: subtotal });
+        if (!result || result.valid !== true) throw new Error(result?.message || "Invalid coupon code.");
+
+        state.appliedCoupon = {
+            code,
+            discountPercent: Number(result.discountPercent || 0),
+            discountAmount: Number(result.discountAmount || 0),
+            finalTotal: Number(result.finalTotal ?? subtotal)
+        };
+
+        setCouponMessage(`${state.appliedCoupon.discountPercent}% discount applied.`, "success");
+        updateCheckoutTotals();
+    } catch (error) {
+        state.appliedCoupon = null;
+        setCouponMessage(error.message || "Unable to validate coupon.", "error");
+        updateCheckoutTotals();
+    } finally {
+        if (DOM.applyCouponButton) DOM.applyCouponButton.disabled = false;
+    }
 }
 
 
@@ -2141,7 +2215,7 @@ async function submitOrder(
             ),
 
         couponCode:
-            "",
+            state.appliedCoupon?.code || "",
 
         subtotal:
             subtotal
@@ -2235,6 +2309,9 @@ async function submitOrder(
                     result.finalTotal ??
                     subtotal
                 ),
+
+            nextCoupon:
+                result.nextCoupon || null,
 
             status:
                 normalizeOrderStatus(
@@ -3226,6 +3303,41 @@ function renderOrderStatus(
 
     }
 
+    renderNextCoupon(order.nextCoupon);
+
+}
+
+function renderNextCoupon(nextCoupon) {
+    const box = DOM.nextCouponBox || document.getElementById("nextCouponBox");
+    if (!box) return;
+
+    if (!nextCoupon || !nextCoupon.code) {
+        box.hidden = true;
+        box.innerHTML = "";
+        return;
+    }
+
+    const expiryText = nextCoupon.expiresAt ? new Date(nextCoupon.expiresAt).toLocaleString("en-IN", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" }) : "24 hours";
+    box.hidden = false;
+    box.innerHTML = `
+        <div class="next-coupon-label">NEXT ORDER COUPON</div>
+        <div class="next-coupon-code">${escapeHtmlClient(nextCoupon.code)}</div>
+        <div class="next-coupon-info">${Number(nextCoupon.discountPercent || 0)}% OFF · Minimum order ${formatMoney(Number(nextCoupon.minOrder || 0))}+ · Valid up to ${formatMoney(Number(nextCoupon.maxOrder || 99999))}<br>Valid until ${escapeHtmlClient(expiryText)}</div>
+        <button type="button" class="next-coupon-copy" id="copyNextCoupon">Copy Coupon</button>`;
+
+    const copy = document.getElementById("copyNextCoupon");
+    if (copy) copy.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(String(nextCoupon.code));
+            copy.textContent = "Copied";
+        } catch (error) {
+            copy.textContent = String(nextCoupon.code);
+        }
+    });
+}
+
+function escapeHtmlClient(value) {
+    return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
 
@@ -3541,6 +3653,26 @@ function bindEvents() {
             openCheckout
         );
 
+    }
+
+    if (DOM.applyCouponButton) {
+        DOM.applyCouponButton.addEventListener("click", applyCoupon);
+    }
+
+    if (DOM.couponInput) {
+        DOM.couponInput.addEventListener("input", () => {
+            if (state.appliedCoupon && DOM.couponInput.value.trim().toUpperCase() !== state.appliedCoupon.code) {
+                state.appliedCoupon = null;
+                setCouponMessage("", "");
+                updateCheckoutTotals();
+            }
+        });
+        DOM.couponInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                applyCoupon();
+            }
+        });
     }
 
 
