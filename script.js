@@ -1,16 +1,6 @@
 /* =========================================================
    LOVE OVER COFFEE
-   CUSTOMER MENU - PART 3
-
-   SECURE TABLE TOKEN
-   LIVE GOOGLE SHEET MENU
-   CART
-   ORDER CREATION
-   CUSTOMER KEY
-   2-HOUR ACTIVE ORDER RECOVERY
-
-   NOTE:
-   Existing style.css ke classes ko preserve kiya gaya hai.
+   CUSTOMER MENU
 ========================================================= */
 
 
@@ -55,8 +45,12 @@ const state = {
 
     menu: [],
 
+    filteredMenu: [],
+
+    categories: [],
+
     activeCategory:
-        "all",
+        "All",
 
     search:
         "",
@@ -73,6 +67,9 @@ const state = {
     activeOrder:
         null,
 
+    customerKey:
+        null,
+
     isLoading:
         false,
 
@@ -83,34 +80,28 @@ const state = {
 
 
 /* =========================================================
-   DOM
+   DOM REFERENCES
 ========================================================= */
 
 const DOM = {
 
-    pageLoader:
-        document.getElementById("pageLoader"),
-
-    app:
-        document.getElementById("app"),
-
     cafeLogo:
         document.getElementById("cafeLogo"),
+
+    logoFallback:
+        document.getElementById("logoFallback"),
 
     cafeName:
         document.getElementById("cafeName"),
 
-    cafeSubtitle:
-        document.getElementById("cafeSubtitle"),
+    cafeNameSmall:
+        document.getElementById("cafeNameSmall"),
 
-    infoBtn:
-        document.getElementById("infoBtn"),
+    cafeTagline:
+        document.getElementById("cafeTagline"),
 
-    infoOverlay:
-        document.getElementById("infoOverlay"),
-
-    closeInfo:
-        document.getElementById("closeInfo"),
+    tableNumber:
+        document.getElementById("tableNumber"),
 
     searchInput:
         document.getElementById("searchInput"),
@@ -118,26 +109,17 @@ const DOM = {
     clearSearch:
         document.getElementById("clearSearch"),
 
-    categoryNav:
-        document.getElementById("categoryNav"),
+    categoryList:
+        document.getElementById("categoryList"),
 
     menuContainer:
         document.getElementById("menuContainer"),
 
-    emptyState:
-        document.getElementById("emptyState"),
+    emptyMenu:
+        document.getElementById("emptyMenu"),
 
-    resetSearch:
-        document.getElementById("resetSearch"),
-
-    itemCount:
-        document.getElementById("itemCount"),
-
-    tableNumber:
-        document.getElementById("tableNumber"),
-
-    cartButton:
-        document.getElementById("cartButton"),
+    cartBar:
+        document.getElementById("cartBar"),
 
     cartItemCount:
         document.getElementById("cartItemCount"),
@@ -145,8 +127,14 @@ const DOM = {
     cartTotal:
         document.getElementById("cartTotal"),
 
+    viewCartButton:
+        document.getElementById("viewCartButton"),
+
     cartOverlay:
         document.getElementById("cartOverlay"),
+
+    cartDrawer:
+        document.getElementById("cartDrawer"),
 
     closeCart:
         document.getElementById("closeCart"),
@@ -154,29 +142,29 @@ const DOM = {
     cartItems:
         document.getElementById("cartItems"),
 
-    emptyCart:
-        document.getElementById("emptyCart"),
+    cartEmpty:
+        document.getElementById("cartEmpty"),
 
-    continueShopping:
-        document.getElementById("continueShopping"),
-
-    cartSummary:
-        document.getElementById("cartSummary"),
-
-    summarySubtotal:
-        document.getElementById("summarySubtotal"),
-
-    summaryTotal:
-        document.getElementById("summaryTotal"),
+    drawerTotal:
+        document.getElementById("drawerTotal"),
 
     checkoutButton:
         document.getElementById("checkoutButton"),
 
-    checkoutOverlay:
-        document.getElementById("checkoutOverlay"),
+    toast:
+        document.getElementById("toast"),
 
-    closeCheckout:
-        document.getElementById("closeCheckout"),
+    activeOrderBanner:
+        document.getElementById("activeOrderBanner"),
+
+    activeOrderText:
+        document.getElementById("activeOrderText"),
+
+    viewOrderButton:
+        document.getElementById("viewOrderButton"),
+
+    customerFormSection:
+        document.getElementById("customerFormSection"),
 
     orderForm:
         document.getElementById("orderForm"),
@@ -184,44 +172,41 @@ const DOM = {
     customerName:
         document.getElementById("customerName"),
 
-    customerPhone:
-        document.getElementById("customerPhone"),
+    mobileNumber:
+        document.getElementById("mobileNumber"),
 
-    orderNote:
-        document.getElementById("orderNote"),
+    tableNumberInput:
+        document.getElementById("tableNumberInput"),
 
-    checkoutItems:
-        document.getElementById("checkoutItems"),
+    specialRequest:
+        document.getElementById("specialRequest"),
 
-    checkoutTotal:
-        document.getElementById("checkoutTotal"),
+    confirmOrderButton:
+        document.getElementById("confirmOrderButton"),
 
-    editCart:
-        document.getElementById("editCart"),
+    confirmOrderTotal:
+        document.getElementById("confirmOrderTotal"),
 
-    placeOrderButton:
-        document.getElementById("placeOrderButton"),
+    closeCheckout:
+        document.getElementById("closeCheckout"),
 
-    successOverlay:
-        document.getElementById("successOverlay"),
+    checkoutOverlay:
+        document.getElementById("checkoutOverlay"),
 
-    successOrderId:
-        document.getElementById("successOrderId"),
+    orderStatusOverlay:
+        document.getElementById("orderStatusOverlay"),
 
-    successTotal:
-        document.getElementById("successTotal"),
+    closeOrderStatus:
+        document.getElementById("closeOrderStatus"),
 
-    newOrderButton:
-        document.getElementById("newOrderButton"),
+    orderStatusNumber:
+        document.getElementById("orderStatusNumber"),
 
-    toast:
-        document.getElementById("toast"),
+    orderStatusTable:
+        document.getElementById("orderStatusTable"),
 
-    toastIcon:
-        document.getElementById("toastIcon"),
-
-    toastMessage:
-        document.getElementById("toastMessage")
+    orderStatusState:
+        document.getElementById("orderStatusState")
 
 };
 
@@ -238,28 +223,25 @@ document.addEventListener(
 
 async function init() {
 
+    applyCafeBranding();
+
+    bindEvents();
+
+    state.customerKey =
+        getOrCreateCustomerKey();
+
+    state.tableToken =
+        getTableTokenFromUrl();
+
+    if (!state.tableToken) {
+
+        showTableRequired();
+
+        return;
+
+    }
+
     try {
-
-        applyBranding();
-
-        bindEvents();
-
-        prepareTableField();
-
-        state.tableToken =
-            getTableTokenFromUrl();
-
-
-        if (!state.tableToken) {
-
-            showTableRequired();
-
-            hideLoader();
-
-            return;
-
-        }
-
 
         await validateTable();
 
@@ -267,14 +249,7 @@ async function init() {
 
         loadActiveOrder();
 
-        renderCategories();
-
-        renderMenu();
-
         updateCartUI();
-
-        hideLoader();
-
 
     } catch (error) {
 
@@ -283,12 +258,10 @@ async function init() {
             error
         );
 
-        showFatalError(
+        showToast(
             error.message ||
-            "Unable to load the menu."
+            "Unable to load menu."
         );
-
-        hideLoader();
 
     }
 
@@ -299,7 +272,7 @@ async function init() {
    BRANDING
 ========================================================= */
 
-function applyBranding() {
+function applyCafeBranding() {
 
     if (DOM.cafeName) {
 
@@ -308,22 +281,45 @@ function applyBranding() {
 
     }
 
+    if (DOM.cafeNameSmall) {
 
-    if (DOM.cafeSubtitle) {
+        DOM.cafeNameSmall.textContent =
+            APP_CONFIG.cafeName.toUpperCase();
 
-        DOM.cafeSubtitle.textContent =
+    }
+
+    if (DOM.cafeTagline) {
+
+        DOM.cafeTagline.textContent =
             APP_CONFIG.tagline;
 
     }
 
-
     if (
         DOM.cafeLogo &&
-        APP_CONFIG.logo
+        DOM.logoFallback
     ) {
 
-        DOM.cafeLogo.src =
-            APP_CONFIG.logo;
+        if (APP_CONFIG.logo) {
+
+            DOM.cafeLogo.src =
+                APP_CONFIG.logo;
+
+            DOM.cafeLogo.hidden =
+                false;
+
+            DOM.logoFallback.hidden =
+                true;
+
+        } else {
+
+            DOM.cafeLogo.hidden =
+                true;
+
+            DOM.logoFallback.hidden =
+                false;
+
+        }
 
     }
 
@@ -331,37 +327,8 @@ function applyBranding() {
 
 
 /* =========================================================
-   TABLE
+   SECURE TABLE TOKEN
 ========================================================= */
-
-function prepareTableField() {
-
-    if (!DOM.tableNumber) {
-        return;
-    }
-
-
-    DOM.tableNumber.readOnly =
-        true;
-
-
-    DOM.tableNumber.setAttribute(
-        "readonly",
-        "readonly"
-    );
-
-
-    DOM.tableNumber.setAttribute(
-        "aria-readonly",
-        "true"
-    );
-
-
-    DOM.tableNumber.placeholder =
-        "Table will be detected automatically";
-
-}
-
 
 function getTableTokenFromUrl() {
 
@@ -370,22 +337,36 @@ function getTableTokenFromUrl() {
             window.location.search
         );
 
-
     const token =
-        String(
-            params.get("t") || ""
-        ).trim();
+        params.get("t");
 
+    if (!token) {
 
-    return token || null;
+        return null;
+
+    }
+
+    return String(token).trim();
 
 }
 
 
+/* =========================================================
+   VALIDATE TABLE
+========================================================= */
+
 async function validateTable() {
 
-    const response =
-        await apiGet(
+    if (!state.tableToken) {
+
+        throw new Error(
+            "Table QR is required."
+        );
+
+    }
+
+    const result =
+        await callApiGet(
             "validateTable",
             {
                 token:
@@ -395,14 +376,36 @@ async function validateTable() {
 
 
     if (
-        !response ||
-        response.success !== true ||
-        response.valid !== true
+        !result ||
+        result.success !== true
     ) {
 
         throw new Error(
-            response?.error ||
-            "Invalid or inactive table QR."
+            result?.message ||
+            "Invalid or expired table QR."
+        );
+
+    }
+
+
+    const table =
+        result.table ||
+        result.data ||
+        result;
+
+
+    const tableName =
+        String(
+            table.tableName ||
+            table.name ||
+            ""
+        ).trim();
+
+
+    if (!tableName) {
+
+        throw new Error(
+            "Table information could not be loaded."
         );
 
     }
@@ -411,21 +414,24 @@ async function validateTable() {
     state.table = {
 
         tableId:
-            response.tableId,
+            String(
+                table.tableId ||
+                ""
+            ),
 
         tableName:
-            response.tableName
+            tableName,
+
+        token:
+            state.tableToken
 
     };
 
 
     if (DOM.tableNumber) {
 
-        DOM.tableNumber.value =
-            response.tableName;
-
         DOM.tableNumber.textContent =
-            response.tableName;
+            tableName;
 
     }
 
@@ -433,10 +439,67 @@ async function validateTable() {
 
 
 /* =========================================================
-   LOAD MENU
+   TABLE REQUIRED SCREEN
+========================================================= */
+
+function showTableRequired() {
+
+    if (DOM.tableNumber) {
+
+        DOM.tableNumber.textContent =
+            "—";
+
+    }
+
+    if (DOM.menuContainer) {
+
+        DOM.menuContainer.innerHTML = "";
+
+    }
+
+    if (DOM.categoryList) {
+
+        DOM.categoryList.innerHTML = "";
+
+    }
+
+    if (DOM.emptyMenu) {
+
+        DOM.emptyMenu.hidden =
+            false;
+
+        DOM.emptyMenu.innerHTML = `
+
+            <div class="empty-icon">
+                🔒
+            </div>
+
+            <h3>
+                Table QR Required
+            </h3>
+
+            <p>
+                Please scan the QR code placed on your table to view the menu.
+            </p>
+
+        `;
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD MENU FROM GOOGLE SHEETS
 ========================================================= */
 
 async function loadMenu() {
+
+    if (state.isLoading) {
+
+        return;
+
+    }
 
     state.isLoading =
         true;
@@ -444,30 +507,126 @@ async function loadMenu() {
 
     try {
 
-        const response =
-            await apiGet(
-                "getMenu"
+        const result =
+            await callApiGet(
+                "getMenu",
+                {
+                    token:
+                        state.tableToken
+                }
             );
 
 
         if (
-            !response ||
-            response.success !== true
+            !result ||
+            result.success !== true
         ) {
 
             throw new Error(
-                response?.error ||
+                result?.message ||
                 "Unable to load menu."
             );
 
         }
 
 
+        let menu = [];
+
+
+        if (
+            Array.isArray(
+                result.items
+            )
+        ) {
+
+            menu =
+                result.items;
+
+        } else if (
+            Array.isArray(
+                result.menu
+            )
+        ) {
+
+            menu =
+                result.menu;
+
+        } else if (
+            Array.isArray(
+                result.data
+            )
+        ) {
+
+            menu =
+                result.data;
+
+        }
+
+
         state.menu =
-            normalizeMenu(
-                response.items || []
+            normalizeMenu(menu);
+
+
+        if (
+            !state.menu.length
+        ) {
+
+            throw new Error(
+                "No menu items found."
             );
 
+        }
+
+
+        buildCategories();
+
+        renderCategories();
+
+        applyFilters();
+
+    } catch (error) {
+
+        console.error(
+            "Menu loading error:",
+            error
+        );
+
+        if (DOM.menuContainer) {
+
+            DOM.menuContainer.innerHTML =
+                "";
+
+        }
+
+        if (DOM.emptyMenu) {
+
+            DOM.emptyMenu.hidden =
+                false;
+
+            DOM.emptyMenu.innerHTML = `
+
+                <div class="empty-icon">
+                    ⚠
+                </div>
+
+                <h3>
+                    Menu unavailable
+                </h3>
+
+                <p>
+                    Please refresh and try again.
+                </p>
+
+            `;
+
+        }
+
+        showToast(
+            error.message ||
+            "Unable to load menu."
+        );
+
+        throw error;
 
     } finally {
 
@@ -479,138 +638,166 @@ async function loadMenu() {
 }
 
 
+/* =========================================================
+   NORMALIZE MENU
+========================================================= */
+
 function normalizeMenu(items) {
 
     return items
-        .map(
-            item => {
+        .map(item => {
 
-                const id =
-                    String(
-                        item.id ?? ""
-                    ).trim();
-
-
-                const name =
-                    String(
-                        item.name ?? ""
-                    ).trim();
+            const id =
+                String(
+                    item.id ??
+                    item.itemId ??
+                    ""
+                ).trim();
 
 
-                const category =
-                    String(
-                        item.category ??
-                        "Other"
-                    ).trim();
+            const name =
+                String(
+                    item.name ??
+                    item.itemName ??
+                    ""
+                ).trim();
 
 
-                const price =
-                    Number(
-                        item.price
-                    );
+            const category =
+                String(
+                    item.category ??
+                    "Other"
+                ).trim();
 
 
-                const available =
-                    item.available !== false;
+            const price =
+                Number(
+                    item.price
+                );
 
 
-                const tag =
-                    String(
-                        item.tag ?? ""
-                    ).trim();
+            const available =
+                item.available !== false;
 
 
-                const type =
-                    String(
-                        item.type ?? ""
-                    )
-                    .trim()
-                    .toLowerCase();
+            const tag =
+                String(
+                    item.tag ??
+                    ""
+                ).trim();
 
 
-                return {
+            const type =
+                String(
+                    item.type ??
+                    ""
+                )
+                .trim()
+                .toLowerCase();
 
-                    id,
 
-                    name,
+            return {
 
-                    category,
+                id,
 
-                    price:
-                        Number.isFinite(
-                            price
-                        )
-                            ? price
-                            : 0,
+                name,
 
-                    available,
+                category,
 
-                    tag,
+                price:
+                    Number.isFinite(price)
+                        ? price
+                        : 0,
 
-                    type
+                available,
 
-                };
+                tag,
 
-            }
-        )
-        .filter(
-            item =>
+                type
+
+            };
+
+        })
+        .filter(item => {
+
+            return (
                 item.id &&
                 item.name
-        );
+            );
+
+        });
 
 }
 
 
 /* =========================================================
-   CATEGORIES
-   Existing CSS:
-   .category-list
-   .category-button
+   BUILD CATEGORIES
+   FIX:
+   Uses existing .category-list /
+   .category-button CSS structure.
+========================================================= */
+
+function buildCategories() {
+
+    const categories = [];
+
+
+    state.menu.forEach(
+        item => {
+
+            const category =
+                String(
+                    item.category ||
+                    ""
+                ).trim();
+
+
+            if (
+                category &&
+                !categories.includes(
+                    category
+                )
+            ) {
+
+                categories.push(
+                    category
+                );
+
+            }
+
+        }
+    );
+
+
+    state.categories = [
+
+        "All",
+
+        ...categories
+
+    ];
+
+}
+
+
+/* =========================================================
+   RENDER CATEGORIES
 ========================================================= */
 
 function renderCategories() {
 
-    if (!DOM.categoryNav) {
+    if (!DOM.categoryList) {
+
         return;
+
     }
 
 
-    const categoryList =
-        DOM.categoryNav.classList.contains(
-            "category-list"
-        )
-            ? DOM.categoryNav
-            : DOM.categoryNav.querySelector(
-                ".category-list"
-            ) ||
-            DOM.categoryNav;
-
-
-    categoryList.innerHTML =
+    DOM.categoryList.innerHTML =
         "";
 
 
-    const uniqueCategories =
-        Array.from(
-            new Set(
-                state.menu
-                    .map(
-                        item =>
-                            item.category
-                    )
-                    .filter(Boolean)
-            )
-        );
-
-
-    const categories = [
-        "all",
-        ...uniqueCategories
-    ];
-
-
-    categories.forEach(
+    state.categories.forEach(
         category => {
 
             const button =
@@ -623,29 +810,18 @@ function renderCategories() {
                 "button";
 
 
+            /*
+             * IMPORTANT:
+             * Existing CSS uses
+             * .category-button
+             */
             button.className =
                 "category-button";
 
 
-            button.dataset.category =
-                normalizeCategory(
-                    category
-                );
-
-
-            button.textContent =
-                category === "all"
-                    ? "All"
-                    : category;
-
-
             if (
-                normalizeCategory(
-                    state.activeCategory
-                ) ===
-                normalizeCategory(
-                    category
-                )
+                category ===
+                state.activeCategory
             ) {
 
                 button.classList.add(
@@ -655,43 +831,38 @@ function renderCategories() {
             }
 
 
+            button.textContent =
+                category;
+
+
+            button.setAttribute(
+                "type",
+                "button"
+            );
+
+
             button.addEventListener(
                 "click",
                 () => {
 
                     state.activeCategory =
-                        normalizeCategory(
-                            category
-                        );
+                        category;
 
 
-                    categoryList
-                        .querySelectorAll(
-                            ".category-button"
-                        )
-                        .forEach(
-                            item => {
+                    /*
+                     * Re-render only the
+                     * category buttons and
+                     * filtered menu.
+                     */
+                    renderCategories();
 
-                                item.classList.remove(
-                                    "active"
-                                );
-
-                            }
-                        );
-
-
-                    button.classList.add(
-                        "active"
-                    );
-
-
-                    renderMenu();
+                    applyFilters();
 
                 }
             );
 
 
-            categoryList.appendChild(
+            DOM.categoryList.appendChild(
                 button
             );
 
@@ -701,126 +872,104 @@ function renderCategories() {
 }
 
 
-function normalizeCategory(
-    value
-) {
-
-    return String(
-        value || ""
-    )
-        .trim()
-        .toLowerCase()
-        .replace(
-            /[^a-z0-9]+/g,
-            "-"
-        )
-        .replace(
-            /^-+|-+$/g,
-            ""
-        );
-
-}
-
-
 /* =========================================================
-   FILTER
+   APPLY FILTERS
 ========================================================= */
 
-function getFilteredMenu() {
-
-    const search =
-        state.search
-            .trim()
-            .toLowerCase();
-
+function applyFilters() {
 
     const category =
-        normalizeCategory(
-            state.activeCategory
-        );
+        state.activeCategory;
 
 
-    return state.menu.filter(
-        item => {
-
-            const itemCategory =
-                normalizeCategory(
-                    item.category
-                );
-
-
-            const categoryMatch =
-                category === "all" ||
-                itemCategory ===
-                category;
+    const search =
+        String(
+            state.search ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
 
 
-            const searchableText =
-                [
-                    item.name,
-                    item.category,
-                    item.tag
-                ]
+    state.filteredMenu =
+        state.menu.filter(
+            item => {
+
+                const matchesCategory =
+                    category === "All" ||
+                    item.category ===
+                        category;
+
+
+                const searchableText =
+                    [
+
+                        item.name,
+
+                        item.category,
+
+                        item.tag,
+
+                        item.type
+
+                    ]
                     .join(" ")
                     .toLowerCase();
 
 
-            const searchMatch =
-                !search ||
-                searchableText.includes(
-                    search
+                const matchesSearch =
+                    !search ||
+                    searchableText.includes(
+                        search
+                    );
+
+
+                return (
+                    matchesCategory &&
+                    matchesSearch
                 );
 
+            }
+        );
 
-            return (
-                categoryMatch &&
-                searchMatch
-            );
 
-        }
-    );
+    renderMenu();
 
 }
 
 
 /* =========================================================
-   MENU RENDER
-   Existing CSS classes preserved.
+   RENDER MENU
 ========================================================= */
 
 function renderMenu() {
 
     if (!DOM.menuContainer) {
+
         return;
+
     }
-
-
-    const items =
-        getFilteredMenu();
 
 
     DOM.menuContainer.innerHTML =
         "";
 
 
-    if (DOM.itemCount) {
+    const items =
+        state.filteredMenu;
 
-        DOM.itemCount.textContent =
-            `${items.length} ${
-                items.length === 1
-                    ? "item"
-                    : "items"
-            }`;
+
+    if (DOM.emptyMenu) {
+
+        DOM.emptyMenu.hidden =
+            items.length !== 0;
 
     }
 
 
-    if (DOM.emptyState) {
+    if (!items.length) {
 
-        DOM.emptyState.style.display =
-            items.length === 0
-                ? "block"
-                : "none";
+        return;
 
     }
 
@@ -828,10 +977,14 @@ function renderMenu() {
     items.forEach(
         item => {
 
-            DOM.menuContainer.appendChild(
+            const card =
                 createMenuCard(
                     item
-                )
+                );
+
+
+            DOM.menuContainer.appendChild(
+                card
             );
 
         }
@@ -841,22 +994,10 @@ function renderMenu() {
 
 
 /* =========================================================
-   MENU CARD
-   Existing CSS structure:
-
-   .menu-card
-     .menu-card-top
-       .menu-card-content
-         .menu-card-name
-         .menu-card-tag
-         .menu-card-category
-         .menu-card-price
-       .menu-card-right
+   CREATE MENU CARD
 ========================================================= */
 
-function createMenuCard(
-    item
-) {
+function createMenuCard(item) {
 
     const card =
         document.createElement(
@@ -899,7 +1040,7 @@ function createMenuCard(
 
     const name =
         document.createElement(
-            "div"
+            "h3"
         );
 
 
@@ -922,20 +1063,16 @@ function createMenuCard(
 
 
     tag.textContent =
-        item.tag || "";
+        item.tag;
 
 
-    if (!item.tag) {
-
-        tag.style.display =
-            "none";
-
-    }
+    tag.hidden =
+        !item.tag;
 
 
     const category =
         document.createElement(
-            "div"
+            "span"
         );
 
 
@@ -967,16 +1104,13 @@ function createMenuCard(
         name
     );
 
-
     content.appendChild(
         tag
     );
 
-
     content.appendChild(
         category
     );
-
 
     content.appendChild(
         price
@@ -1019,57 +1153,53 @@ function createMenuCard(
             stock
         );
 
-    }
 
-
-    else if (
+    } else if (
         quantity > 0
     ) {
 
         right.appendChild(
+
             createQuantityControl(
                 item.id,
                 quantity
             )
+
         );
 
-    }
 
+    } else {
 
-    else {
-
-        const add =
+        const button =
             document.createElement(
                 "button"
             );
 
 
-        add.type =
+        button.type =
             "button";
 
 
-        add.className =
+        button.className =
             "add-button";
 
 
-        add.textContent =
+        button.textContent =
             "Add";
 
 
-        add.addEventListener(
+        button.addEventListener(
             "click",
             () => {
 
-                addToCart(
-                    item
-                );
+                addToCart(item);
 
             }
         );
 
 
         right.appendChild(
-            add
+            button
         );
 
     }
@@ -1088,40 +1218,6 @@ function createMenuCard(
     card.appendChild(
         top
     );
-
-
-    /*
-     * Keep existing food-type behavior.
-     * CSS may or may not define this class;
-     * it does not affect existing layout.
-     */
-
-    if (
-        item.type === "veg" ||
-        item.type === "nonveg"
-    ) {
-
-        const typeBadge =
-            document.createElement(
-                "span"
-            );
-
-
-        typeBadge.className =
-            `food-type ${item.type}`;
-
-
-        typeBadge.textContent =
-            item.type === "veg"
-                ? "VEG"
-                : "NON-VEG";
-
-
-        card.appendChild(
-            typeBadge
-        );
-
-    }
 
 
     return card;
@@ -1168,7 +1264,9 @@ function createQuantityControl(
 
     minus.addEventListener(
         "click",
-        () => {
+        event => {
+
+            event.stopPropagation();
 
             changeQuantity(
                 itemId,
@@ -1213,7 +1311,9 @@ function createQuantityControl(
 
     plus.addEventListener(
         "click",
-        () => {
+        event => {
+
+            event.stopPropagation();
 
             changeQuantity(
                 itemId,
@@ -1248,15 +1348,12 @@ function createQuantityControl(
    CART
 ========================================================= */
 
-function addToCart(
-    item
-) {
+function addToCart(item) {
 
     if (!item.available) {
 
         showToast(
-            "This item is currently unavailable.",
-            "error"
+            "This item is currently unavailable."
         );
 
         return;
@@ -1273,8 +1370,7 @@ function addToCart(
     if (current >= 50) {
 
         showToast(
-            "Maximum quantity reached.",
-            "error"
+            "Maximum quantity reached."
         );
 
         return;
@@ -1289,8 +1385,6 @@ function addToCart(
 
 
     renderMenu();
-
-    renderCart();
 
     updateCartUI();
 
@@ -1314,7 +1408,8 @@ function changeQuantity(
 
 
     const next =
-        current + amount;
+        current +
+        Number(amount);
 
 
     if (next <= 0) {
@@ -1323,10 +1418,7 @@ function changeQuantity(
             itemId
         );
 
-    }
-
-
-    else if (
+    } else if (
         next <= 50
     ) {
 
@@ -1334,6 +1426,14 @@ function changeQuantity(
             itemId,
             next
         );
+
+    } else {
+
+        showToast(
+            "Maximum quantity reached."
+        );
+
+        return;
 
     }
 
@@ -1347,6 +1447,10 @@ function changeQuantity(
 }
 
 
+/* =========================================================
+   CART HELPERS
+========================================================= */
+
 function getCartQuantity(
     itemId
 ) {
@@ -1359,10 +1463,6 @@ function getCartQuantity(
 
 }
 
-
-/* =========================================================
-   CART DATA
-========================================================= */
 
 function getCartItems() {
 
@@ -1384,31 +1484,21 @@ function getCartItems() {
 
 
             if (!item) {
+
                 return;
+
             }
 
 
             items.push({
 
-                id:
-                    item.id,
-
-                name:
-                    item.name,
-
-                category:
-                    item.category,
-
-                price:
-                    item.price,
+                ...item,
 
                 quantity,
 
                 lineTotal:
-                    roundMoney(
-                        item.price *
-                        quantity
-                    )
+                    item.price *
+                    quantity
 
             });
 
@@ -1423,18 +1513,21 @@ function getCartItems() {
 
 function getCartTotal() {
 
-    return roundMoney(
-        getCartItems()
-            .reduce(
-                (
-                    total,
-                    item
-                ) =>
+    return getCartItems()
+        .reduce(
+            (
+                total,
+                item
+            ) => {
+
+                return (
                     total +
-                    item.lineTotal,
-                0
-            )
-    );
+                    item.lineTotal
+                );
+
+            },
+            0
+        );
 
 }
 
@@ -1446,9 +1539,14 @@ function getCartItemCount() {
             (
                 total,
                 item
-            ) =>
-                total +
-                item.quantity,
+            ) => {
+
+                return (
+                    total +
+                    item.quantity
+                );
+
+            },
             0
         );
 
@@ -1469,10 +1567,22 @@ function updateCartUI() {
         getCartTotal();
 
 
+    if (DOM.cartBar) {
+
+        DOM.cartBar.hidden =
+            count === 0;
+
+    }
+
+
     if (DOM.cartItemCount) {
 
         DOM.cartItemCount.textContent =
-            count;
+            `${count} ${
+                count === 1
+                    ? "item"
+                    : "items"
+            }`;
 
     }
 
@@ -1487,9 +1597,9 @@ function updateCartUI() {
     }
 
 
-    if (DOM.summarySubtotal) {
+    if (DOM.drawerTotal) {
 
-        DOM.summarySubtotal.textContent =
+        DOM.drawerTotal.textContent =
             formatCurrency(
                 total
             );
@@ -1497,22 +1607,12 @@ function updateCartUI() {
     }
 
 
-    if (DOM.summaryTotal) {
+    if (DOM.confirmOrderTotal) {
 
-        DOM.summaryTotal.textContent =
+        DOM.confirmOrderTotal.textContent =
             formatCurrency(
                 total
             );
-
-    }
-
-
-    if (DOM.cartSummary) {
-
-        DOM.cartSummary.style.display =
-            count > 0
-                ? ""
-                : "none";
 
     }
 
@@ -1520,31 +1620,30 @@ function updateCartUI() {
 
 
 /* =========================================================
-   CART RENDER
-   Existing CSS classes preserved.
+   RENDER CART
 ========================================================= */
 
 function renderCart() {
 
+    if (!DOM.cartItems) {
+
+        return;
+
+    }
+
+
     const items =
         getCartItems();
-
-
-    if (!DOM.cartItems) {
-        return;
-    }
 
 
     DOM.cartItems.innerHTML =
         "";
 
 
-    if (DOM.emptyCart) {
+    if (DOM.cartEmpty) {
 
-        DOM.emptyCart.style.display =
-            items.length === 0
-                ? ""
-                : "none";
+        DOM.cartEmpty.hidden =
+            items.length !== 0;
 
     }
 
@@ -1599,7 +1698,9 @@ function renderCart() {
             price.textContent =
                 `${formatCurrency(
                     item.price
-                )} × ${item.quantity}`;
+                )} × ${item.quantity} = ${formatCurrency(
+                    item.lineTotal
+                )}`;
 
 
             info.appendChild(
@@ -1623,10 +1724,12 @@ function renderCart() {
 
 
             controls.appendChild(
+
                 createQuantityControl(
                     item.id,
                     item.quantity
                 )
+
             );
 
 
@@ -1654,508 +1757,79 @@ function renderCart() {
 
 
 /* =========================================================
-   CHECKOUT PREVIEW
-========================================================= */
-
-function renderCheckout() {
-
-    const items =
-        getCartItems();
-
-
-    if (!DOM.checkoutItems) {
-        return;
-    }
-
-
-    DOM.checkoutItems.innerHTML =
-        "";
-
-
-    items.forEach(
-        item => {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                "checkout-item";
-
-
-            const name =
-                document.createElement(
-                    "span"
-                );
-
-
-            name.textContent =
-                `${item.name} × ${item.quantity}`;
-
-
-            const price =
-                document.createElement(
-                    "strong"
-                );
-
-
-            price.textContent =
-                formatCurrency(
-                    item.lineTotal
-                );
-
-
-            row.appendChild(
-                name
-            );
-
-
-            row.appendChild(
-                price
-            );
-
-
-            DOM.checkoutItems.appendChild(
-                row
-            );
-
-        }
-    );
-
-
-    if (DOM.checkoutTotal) {
-
-        DOM.checkoutTotal.textContent =
-            formatCurrency(
-                getCartTotal()
-            );
-
-    }
-
-}
-
-
-/* =========================================================
-   OPEN / CLOSE CART
+   OPEN CART
 ========================================================= */
 
 function openCart() {
 
     renderCart();
 
-    showOverlay(
-        DOM.cartOverlay
-    );
+
+    if (DOM.cartOverlay) {
+
+        DOM.cartOverlay.hidden =
+            false;
+
+    }
+
+
+    if (DOM.cartDrawer) {
+
+        DOM.cartDrawer.classList.add(
+            "open"
+        );
+
+        DOM.cartDrawer.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+    }
+
+
+    document.body.style.overflow =
+        "hidden";
 
 }
 
+
+/* =========================================================
+   CLOSE CART
+========================================================= */
 
 function closeCart() {
 
-    hideOverlay(
-        DOM.cartOverlay
-    );
+    if (DOM.cartDrawer) {
 
-}
-
-
-function openCheckout() {
-
-    if (
-        getCartItemCount() === 0
-    ) {
-
-        showToast(
-            "Your cart is empty.",
-            "error"
+        DOM.cartDrawer.classList.remove(
+            "open"
         );
 
-        return;
+        DOM.cartDrawer.setAttribute(
+            "aria-hidden",
+            "true"
+        );
 
     }
 
 
-    renderCheckout();
+    setTimeout(
+        () => {
 
+            if (DOM.cartOverlay) {
 
-    hideOverlay(
-        DOM.cartOverlay
-    );
+                DOM.cartOverlay.hidden =
+                    true;
 
+            }
 
-    showOverlay(
-        DOM.checkoutOverlay
-    );
-
-}
-
-
-function closeCheckout() {
-
-    hideOverlay(
-        DOM.checkoutOverlay
-    );
-
-}
-
-
-/* =========================================================
-   CREATE ORDER
-========================================================= */
-
-async function submitOrder(
-    event
-) {
-
-    event.preventDefault();
-
-
-    if (state.isSubmitting) {
-        return;
-    }
-
-
-    if (
-        !state.tableToken ||
-        !state.table
-    ) {
-
-        showToast(
-            "Please scan the table QR code again.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const items =
-        getCartItems();
-
-
-    if (
-        items.length === 0
-    ) {
-
-        showToast(
-            "Your cart is empty.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const customerName =
-        String(
-            DOM.customerName?.value ||
-            ""
-        ).trim();
-
-
-    const mobile =
-        String(
-            DOM.customerPhone?.value ||
-            ""
-        ).trim();
-
-
-    const specialRequest =
-        String(
-            DOM.orderNote?.value ||
-            ""
-        ).trim();
-
-
-    if (!customerName) {
-
-        showToast(
-            "Please enter your name.",
-            "error"
-        );
-
-        DOM.customerName?.focus();
-
-        return;
-
-    }
-
-
-    if (!mobile) {
-
-        showToast(
-            "Please enter your mobile number.",
-            "error"
-        );
-
-        DOM.customerPhone?.focus();
-
-        return;
-
-    }
-
-
-    const cleanMobile =
-        mobile.replace(
-            /[\s-]/g,
-            ""
-        );
-
-
-    if (
-        !/^[0-9+]{10,15}$/.test(
-            cleanMobile
-        )
-    ) {
-
-        showToast(
-            "Please enter a valid mobile number.",
-            "error"
-        );
-
-        DOM.customerPhone?.focus();
-
-        return;
-
-    }
-
-
-    state.isSubmitting =
-        true;
-
-
-    setPlaceOrderLoading(
-        true
+        },
+        280
     );
 
 
-    try {
-
-        let customerKey =
-            localStorage.getItem(
-                "cafe_customer_key"
-            );
-
-
-        if (!customerKey) {
-
-            customerKey =
-                generateLocalKey();
-
-
-            localStorage.setItem(
-                "cafe_customer_key",
-                customerKey
-            );
-
-        }
-
-
-        const response =
-            await apiPost({
-
-                action:
-                    "createOrder",
-
-                tableToken:
-                    state.tableToken,
-
-                customerName,
-
-                mobile:
-                    cleanMobile,
-
-                specialRequest,
-
-                customerKey,
-
-                couponCode:
-                    "",
-
-                items:
-                    items.map(
-                        item => ({
-
-                            id:
-                                item.id,
-
-                            quantity:
-                                item.quantity
-
-                        })
-                    )
-
-            });
-
-
-        if (
-            !response ||
-            response.success !== true
-        ) {
-
-            throw new Error(
-                response?.error ||
-                "Order could not be placed."
-            );
-
-        }
-
-
-        const order = {
-
-            orderId:
-                response.orderId,
-
-            customerKey:
-                response.customerKey ||
-                customerKey,
-
-            table:
-                response.table,
-
-            status:
-                response.status,
-
-            items:
-                response.items ||
-                items,
-
-            subtotal:
-                response.subtotal,
-
-            couponCode:
-                response.couponCode ||
-                "",
-
-            discountPercent:
-                response.discountPercent ||
-                0,
-
-            discountAmount:
-                response.discountAmount ||
-                0,
-
-            finalTotal:
-                response.finalTotal,
-
-            createdAt:
-                response.createdAt ||
-                new Date().toISOString(),
-
-            savedAt:
-                Date.now()
-
-        };
-
-
-        state.activeOrder =
-            order;
-
-
-        saveActiveOrder(
-            order
-        );
-
-
-        if (DOM.successOrderId) {
-
-            DOM.successOrderId.textContent =
-                order.orderId;
-
-        }
-
-
-        if (DOM.successTotal) {
-
-            DOM.successTotal.textContent =
-                formatCurrency(
-                    order.finalTotal
-                );
-
-        }
-
-
-        hideOverlay(
-            DOM.checkoutOverlay
-        );
-
-
-        showOverlay(
-            DOM.successOverlay
-        );
-
-
-        state.cart.clear();
-
-
-        renderMenu();
-
-        updateCartUI();
-
-
-        showToast(
-            "Order placed successfully."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Order submission error:",
-            error
-        );
-
-
-        showToast(
-            error.message ||
-            "Unable to place order.",
-            "error"
-        );
-
-    } finally {
-
-        state.isSubmitting =
-            false;
-
-
-        setPlaceOrderLoading(
-            false
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   NEW ORDER
-========================================================= */
-
-function startNewOrder() {
-
-    state.cart.clear();
-
-    state.activeOrder =
-        null;
-
-
-    renderMenu();
-
-    updateCartUI();
-
-
-    hideOverlay(
-        DOM.successOverlay
-    );
-
-
-    showToast(
-        "Ready for a new order."
-    );
+    document.body.style.overflow =
+        "";
 
 }
 
@@ -2164,62 +1838,127 @@ function startNewOrder() {
    ACTIVE ORDER
 ========================================================= */
 
+function getCustomerKey() {
+
+    try {
+
+        return localStorage.getItem(
+            "love_over_coffee_customer_key"
+        );
+
+    } catch (error) {
+
+        return null;
+
+    }
+
+}
+
+
+function getOrCreateCustomerKey() {
+
+    let key =
+        getCustomerKey();
+
+
+    if (key) {
+
+        return key;
+
+    }
+
+
+    key =
+        "CUS-" +
+        Date.now().toString(36) +
+        "-" +
+        Math.random()
+            .toString(36)
+            .substring(
+                2,
+                10
+            );
+
+
+    try {
+
+        localStorage.setItem(
+            "love_over_coffee_customer_key",
+            key
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Could not save customer key.",
+            error
+        );
+
+    }
+
+
+    return key;
+
+}
+
+
 function loadActiveOrder() {
 
     try {
 
-        const raw =
+        const saved =
             localStorage.getItem(
-                "cafe_active_order"
+                "love_over_coffee_active_order"
             );
 
 
-        if (!raw) {
+        if (!saved) {
+
             return;
+
         }
 
 
         const order =
             JSON.parse(
-                raw
+                saved
             );
 
 
         if (
             !order ||
-            !order.orderId ||
-            !order.savedAt
+            !order.orderId
         ) {
-
-            clearActiveOrder();
 
             return;
 
         }
 
 
-        const age =
-            Date.now() -
+        const savedAt =
             Number(
-                order.savedAt
+                order.savedAt ||
+                0
             );
 
 
         const maxAge =
-            Number(
-                APP_CONFIG.activeOrderHours
-            ) *
+            APP_CONFIG.activeOrderHours *
             60 *
             60 *
             1000;
 
 
         if (
-            age >
-            maxAge
+            savedAt &&
+            Date.now() -
+                savedAt >
+                maxAge
         ) {
 
-            clearActiveOrder();
+            localStorage.removeItem(
+                "love_over_coffee_active_order"
+            );
 
             return;
 
@@ -2230,15 +1969,41 @@ function loadActiveOrder() {
             order;
 
 
+        showActiveOrder(
+            order
+        );
+
     } catch (error) {
 
         console.warn(
-            "Could not recover active order.",
+            "Could not load active order.",
             error
         );
 
+    }
 
-        clearActiveOrder();
+}
+
+
+function showActiveOrder(
+    order
+) {
+
+    if (!DOM.activeOrderBanner) {
+
+        return;
+
+    }
+
+
+    DOM.activeOrderBanner.hidden =
+        false;
+
+
+    if (DOM.activeOrderText) {
+
+        DOM.activeOrderText.textContent =
+            `Order #${order.orderId}`;
 
     }
 
@@ -2251,11 +2016,28 @@ function saveActiveOrder(
 
     try {
 
+        const data = {
+
+            ...order,
+
+            savedAt:
+                Date.now()
+
+        };
+
+
         localStorage.setItem(
-            "cafe_active_order",
-            JSON.stringify(
-                order
-            )
+            "love_over_coffee_active_order",
+            JSON.stringify(data)
+        );
+
+
+        state.activeOrder =
+            data;
+
+
+        showActiveOrder(
+            data
         );
 
     } catch (error) {
@@ -2270,443 +2052,47 @@ function saveActiveOrder(
 }
 
 
-function clearActiveOrder() {
-
-    state.activeOrder =
-        null;
-
-
-    localStorage.removeItem(
-        "cafe_active_order"
-    );
-
-}
-
-
-/* =========================================================
-   API GET
-========================================================= */
-
-async function apiGet(
-    action,
-    params = {}
-) {
-
-    if (!APP_CONFIG.apiUrl) {
-
-        throw new Error(
-            "Apps Script API URL is missing."
-        );
-
-    }
-
-
-    const query =
-        new URLSearchParams();
-
-
-    query.set(
-        "action",
-        action
-    );
-
-
-    Object.keys(
-        params
-    ).forEach(
-        key => {
-
-            const value =
-                params[key];
-
-
-            if (
-                value !== undefined &&
-                value !== null
-            ) {
-
-                query.set(
-                    key,
-                    String(value)
-                );
-
-            }
-
-        }
-    );
-
-
-    const response =
-        await fetch(
-            APP_CONFIG.apiUrl +
-            "?" +
-            query.toString(),
-            {
-
-                method:
-                    "GET",
-
-                redirect:
-                    "follow",
-
-                cache:
-                    "no-store"
-
-            }
-        );
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            "Server connection failed."
-        );
-
-    }
-
-
-    return await response.json();
-
-}
-
-
-/* =========================================================
-   API POST
-========================================================= */
-
-async function apiPost(
-    payload
-) {
-
-    if (!APP_CONFIG.apiUrl) {
-
-        throw new Error(
-            "Apps Script API URL is missing."
-        );
-
-    }
-
-
-    const response =
-        await fetch(
-            APP_CONFIG.apiUrl,
-            {
-
-                method:
-                    "POST",
-
-                headers:
-                    {
-                        "Content-Type":
-                            "text/plain;charset=utf-8"
-                    },
-
-                body:
-                    JSON.stringify(
-                        payload
-                    ),
-
-                redirect:
-                    "follow"
-
-            }
-        );
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            "Server connection failed."
-        );
-
-    }
-
-
-    return await response.json();
-
-}
-
-
-/* =========================================================
-   EVENTS
-========================================================= */
-
-function bindEvents() {
-
-    if (DOM.searchInput) {
-
-        DOM.searchInput.addEventListener(
-            "input",
-            () => {
-
-                state.search =
-                    DOM.searchInput.value;
-
-
-                if (DOM.clearSearch) {
-
-                    DOM.clearSearch.hidden =
-                        !state.search;
-
-                }
-
-
-                renderMenu();
-
-            }
-        );
-
-    }
-
-
-    if (DOM.clearSearch) {
-
-        DOM.clearSearch.addEventListener(
-            "click",
-            clearSearch
-        );
-
-    }
-
-
-    if (DOM.resetSearch) {
-
-        DOM.resetSearch.addEventListener(
-            "click",
-            () => {
-
-                clearSearch();
-
-
-                state.activeCategory =
-                    "all";
-
-
-                activateAllCategory();
-
-
-                renderMenu();
-
-            }
-        );
-
-    }
-
-
-    if (DOM.cartButton) {
-
-        DOM.cartButton.addEventListener(
-            "click",
-            openCart
-        );
-
-    }
-
-
-    if (DOM.closeCart) {
-
-        DOM.closeCart.addEventListener(
-            "click",
-            closeCart
-        );
-
-    }
-
-
-    if (DOM.cartOverlay) {
-
-        DOM.cartOverlay.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target ===
-                    DOM.cartOverlay
-                ) {
-
-                    closeCart();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    if (DOM.continueShopping) {
-
-        DOM.continueShopping.addEventListener(
-            "click",
-            closeCart
-        );
-
-    }
-
-
-    if (DOM.checkoutButton) {
-
-        DOM.checkoutButton.addEventListener(
-            "click",
-            openCheckout
-        );
-
-    }
-
-
-    if (DOM.closeCheckout) {
-
-        DOM.closeCheckout.addEventListener(
-            "click",
-            closeCheckout
-        );
-
-    }
-
-
-    if (DOM.editCart) {
-
-        DOM.editCart.addEventListener(
-            "click",
-            () => {
-
-                closeCheckout();
-
-                openCart();
-
-            }
-        );
-
-    }
-
-
-    if (DOM.orderForm) {
-
-        DOM.orderForm.addEventListener(
-            "submit",
-            submitOrder
-        );
-
-    }
-
-
-    if (DOM.newOrderButton) {
-
-        DOM.newOrderButton.addEventListener(
-            "click",
-            startNewOrder
-        );
-
-    }
-
-
-    if (DOM.infoBtn) {
-
-        DOM.infoBtn.addEventListener(
-            "click",
-            () => {
-
-                showOverlay(
-                    DOM.infoOverlay
-                );
-
-            }
-        );
-
-    }
-
-
-    if (DOM.closeInfo) {
-
-        DOM.closeInfo.addEventListener(
-            "click",
-            () => {
-
-                hideOverlay(
-                    DOM.infoOverlay
-                );
-
-            }
-        );
-
-    }
-
-
-    if (DOM.infoOverlay) {
-
-        DOM.infoOverlay.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target ===
-                    DOM.infoOverlay
-                ) {
-
-                    hideOverlay(
-                        DOM.infoOverlay
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   CATEGORY HELPERS
-========================================================= */
-
-function activateAllCategory() {
-
-    if (!DOM.categoryNav) {
-        return;
-    }
-
-
-    const buttons =
-        DOM.categoryNav.querySelectorAll(
-            ".category-button"
-        );
-
-
-    buttons.forEach(
-        button => {
-
-            const category =
-                normalizeCategory(
-                    button.dataset.category ||
-                    ""
-                );
-
-
-            button.classList.toggle(
-                "active",
-                category === "all"
-            );
-
-        }
-    );
-
-}
-
-
 /* =========================================================
    SEARCH
 ========================================================= */
 
-function clearSearch() {
+function handleSearch() {
 
-    if (DOM.searchInput) {
+    if (!DOM.searchInput) {
 
-        DOM.searchInput.value =
-            "";
+        return;
 
     }
+
+
+    state.search =
+        DOM.searchInput.value;
+
+
+    if (DOM.clearSearch) {
+
+        DOM.clearSearch.hidden =
+            !state.search;
+
+    }
+
+
+    renderMenu();
+
+}
+
+
+function clearSearch() {
+
+    if (!DOM.searchInput) {
+
+        return;
+
+    }
+
+
+    DOM.searchInput.value =
+        "";
 
 
     state.search =
@@ -2727,66 +2113,526 @@ function clearSearch() {
 
 
 /* =========================================================
-   OVERLAYS
+   CHECKOUT
 ========================================================= */
 
-function showOverlay(
-    element
-) {
+function openCheckout() {
 
-    if (!element) {
+    if (
+        getCartItemCount() === 0
+    ) {
+
+        showToast(
+            "Your cart is empty."
+        );
+
         return;
+
     }
 
 
-    element.classList.add(
-        "active"
-    );
+    closeCart();
 
 
-    element.setAttribute(
-        "aria-hidden",
-        "false"
-    );
+    if (
+        DOM.tableNumberInput &&
+        state.table
+    ) {
+
+        DOM.tableNumberInput.value =
+            state.table.tableName;
+
+    }
 
 
-    document.body.classList.add(
-        "modal-open"
-    );
+    if (
+        DOM.customerFormSection
+    ) {
+
+        DOM.customerFormSection.hidden =
+            false;
+
+    }
+
+
+    if (
+        DOM.checkoutOverlay
+    ) {
+
+        DOM.checkoutOverlay.hidden =
+            false;
+
+    }
+
+
+    updateCartUI();
 
 }
 
 
-function hideOverlay(
-    element
-) {
+function closeCheckout() {
 
-    if (!element) {
+    if (
+        DOM.checkoutOverlay
+    ) {
+
+        DOM.checkoutOverlay.hidden =
+            true;
+
+    }
+
+}
+
+
+async function submitOrder() {
+
+    if (state.isSubmitting) {
+
         return;
+
     }
 
 
-    element.classList.remove(
-        "active"
-    );
+    if (
+        getCartItemCount() === 0
+    ) {
+
+        showToast(
+            "Your cart is empty."
+        );
+
+        return;
+
+    }
 
 
-    element.setAttribute(
-        "aria-hidden",
-        "true"
-    );
+    const customerName =
+        DOM.customerName
+            ? DOM.customerName.value.trim()
+            : "";
 
 
-    const anyOpen =
-        document.querySelector(
-            ".modal-overlay.active"
+    const mobile =
+        DOM.mobileNumber
+            ? DOM.mobileNumber.value.trim()
+            : "";
+
+
+    const specialRequest =
+        DOM.specialRequest
+            ? DOM.specialRequest.value.trim()
+            : "";
+
+
+    if (!customerName) {
+
+        showToast(
+            "Please enter your name."
+        );
+
+        DOM.customerName?.focus();
+
+        return;
+
+    }
+
+
+    if (
+        !/^[0-9+\-\s]{7,15}$/.test(
+            mobile
+        )
+    ) {
+
+        showToast(
+            "Please enter a valid mobile number."
+        );
+
+        DOM.mobileNumber?.focus();
+
+        return;
+
+    }
+
+
+    if (
+        !state.tableToken ||
+        !state.table
+    ) {
+
+        showToast(
+            "Table QR is invalid."
+        );
+
+        return;
+
+    }
+
+
+    const items =
+        getCartItems()
+            .map(item => {
+
+                return {
+
+                    id:
+                        item.id,
+
+                    quantity:
+                        item.quantity
+
+                };
+
+            });
+
+
+    const orderData = {
+
+        customerName:
+
+            customerName,
+
+        mobile:
+
+            mobile,
+
+        mobileNumber:
+
+            mobile,
+
+        tableToken:
+
+            state.tableToken,
+
+        customerKey:
+
+            state.customerKey,
+
+        specialRequest:
+
+            specialRequest,
+
+        couponCode:
+
+            "",
+
+        items:
+
+            items
+
+    };
+
+
+    state.isSubmitting =
+        true;
+
+
+    if (
+        DOM.confirmOrderButton
+    ) {
+
+        DOM.confirmOrderButton.disabled =
+            true;
+
+        DOM.confirmOrderButton.textContent =
+            "Placing Order...";
+
+    }
+
+
+    try {
+
+        const result =
+            await callApiPost(
+                "createOrder",
+                orderData
+            );
+
+
+        if (
+            !result ||
+            result.success !== true
+        ) {
+
+            throw new Error(
+                result?.message ||
+                "Unable to place order."
+            );
+
+        }
+
+
+        const activeOrder = {
+
+            orderId:
+                result.orderId,
+
+            customerKey:
+                result.customerKey ||
+                state.customerKey,
+
+            table:
+                result.table ||
+                state.table.tableName,
+
+            status:
+                result.status ||
+                "New",
+
+            items:
+                result.items ||
+                [],
+
+            subtotal:
+                result.subtotal ||
+                getCartTotal(),
+
+            finalTotal:
+                result.finalTotal ||
+                getCartTotal(),
+
+            createdAt:
+                result.createdAt ||
+                new Date().toISOString()
+
+        };
+
+
+        if (
+            result.customerKey
+        ) {
+
+            state.customerKey =
+                result.customerKey;
+
+
+            try {
+
+                localStorage.setItem(
+                    "love_over_coffee_customer_key",
+                    result.customerKey
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not save customer key.",
+                    error
+                );
+
+            }
+
+        }
+
+
+        saveActiveOrder(
+            activeOrder
         );
 
 
-    if (!anyOpen) {
+        state.cart =
+            new Map();
 
-        document.body.classList.remove(
-            "modal-open"
+
+        updateCartUI();
+
+        renderMenu();
+
+
+        closeCheckout();
+
+
+        showToast(
+            `Order #${result.orderId} placed successfully.`
+        );
+
+
+        openOrderStatus();
+
+
+    } catch (error) {
+
+        console.error(
+            "Order submission error:",
+            error
+        );
+
+
+        showToast(
+            error.message ||
+            "Unable to place order."
+        );
+
+    } finally {
+
+        state.isSubmitting =
+            false;
+
+
+        if (
+            DOM.confirmOrderButton
+        ) {
+
+            DOM.confirmOrderButton.disabled =
+                false;
+
+            DOM.confirmOrderButton.textContent =
+                "Place Order";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   ORDER STATUS
+========================================================= */
+
+async function openOrderStatus() {
+
+    const order =
+        state.activeOrder;
+
+
+    if (!order?.orderId) {
+
+        showToast(
+            "No active order found."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        DOM.orderStatusOverlay
+    ) {
+
+        DOM.orderStatusOverlay.hidden =
+            false;
+
+    }
+
+
+    if (
+        DOM.orderStatusNumber
+    ) {
+
+        DOM.orderStatusNumber.textContent =
+            `Order #${order.orderId}`;
+
+    }
+
+
+    if (
+        DOM.orderStatusTable
+    ) {
+
+        DOM.orderStatusTable.textContent =
+            order.table ||
+            state.table?.tableName ||
+            "";
+
+    }
+
+
+    if (
+        DOM.orderStatusState
+    ) {
+
+        DOM.orderStatusState.textContent =
+            order.status ||
+            "New";
+
+    }
+
+
+    await refreshOrderStatus();
+
+}
+
+
+async function refreshOrderStatus() {
+
+    const order =
+        state.activeOrder;
+
+
+    if (
+        !order?.orderId ||
+        !state.customerKey
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const result =
+            await callApiGet(
+                "getOrder",
+                {
+
+                    orderId:
+                        order.orderId,
+
+                    customerKey:
+                        state.customerKey
+
+                }
+            );
+
+
+        if (
+            !result ||
+            result.success !== true ||
+            result.found !== true
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            result.order
+        ) {
+
+            state.activeOrder = {
+
+                ...order,
+
+                ...result.order
+
+            };
+
+
+            saveActiveOrder(
+                state.activeOrder
+            );
+
+
+            if (
+                DOM.orderStatusState
+            ) {
+
+                DOM.orderStatusState.textContent =
+                    result.order.status ||
+                    "New";
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "Could not refresh order status.",
+            error
         );
 
     }
@@ -2795,209 +2641,399 @@ function hideOverlay(
 
 
 /* =========================================================
-   PLACE ORDER BUTTON
+   CLOSE ORDER STATUS
 ========================================================= */
 
-function setPlaceOrderLoading(
-    loading
+function closeOrderStatus() {
+
+    if (
+        DOM.orderStatusOverlay
+    ) {
+
+        DOM.orderStatusOverlay.hidden =
+            true;
+
+    }
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+function bindEvents() {
+
+    DOM.searchInput?.addEventListener(
+        "input",
+        handleSearch
+    );
+
+
+    DOM.clearSearch?.addEventListener(
+        "click",
+        clearSearch
+    );
+
+
+    DOM.viewCartButton?.addEventListener(
+        "click",
+        openCart
+    );
+
+
+    DOM.closeCart?.addEventListener(
+        "click",
+        closeCart
+    );
+
+
+    DOM.cartOverlay?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                DOM.cartOverlay
+            ) {
+
+                closeCart();
+
+            }
+
+        }
+    );
+
+
+    DOM.checkoutButton?.addEventListener(
+        "click",
+        openCheckout
+    );
+
+
+    DOM.closeCheckout?.addEventListener(
+        "click",
+        closeCheckout
+    );
+
+
+    DOM.checkoutOverlay?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                DOM.checkoutOverlay
+            ) {
+
+                closeCheckout();
+
+            }
+
+        }
+    );
+
+
+    DOM.orderForm?.addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
+
+            submitOrder();
+
+        }
+    );
+
+
+    DOM.confirmOrderButton?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                DOM.orderForm
+            ) {
+
+                return;
+
+            }
+
+            event.preventDefault();
+
+            submitOrder();
+
+        }
+    );
+
+
+    DOM.viewOrderButton?.addEventListener(
+        "click",
+        openOrderStatus
+    );
+
+
+    DOM.closeOrderStatus?.addEventListener(
+        "click",
+        closeOrderStatus
+    );
+
+
+    DOM.orderStatusOverlay?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                DOM.orderStatusOverlay
+            ) {
+
+                closeOrderStatus();
+
+            }
+
+        }
+    );
+
+
+    DOM.mobileNumber?.addEventListener(
+        "input",
+        () => {
+
+            DOM.mobileNumber.value =
+                DOM.mobileNumber.value
+                    .replace(
+                        /[^0-9+\-\s]/g,
+                        ""
+                    )
+                    .slice(
+                        0,
+                        15
+                    );
+
+        }
+    );
+
+
+    DOM.specialRequest?.addEventListener(
+        "input",
+        () => {
+
+            if (
+                DOM.specialRequest.maxLength >
+                0
+            ) {
+
+                DOM.specialRequest.value =
+                    DOM.specialRequest.value.slice(
+                        0,
+                        DOM.specialRequest.maxLength
+                    );
+
+            }
+
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key !==
+                "Escape"
+            ) {
+
+                return;
+
+            }
+
+
+            closeCart();
+
+            closeCheckout();
+
+            closeOrderStatus();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   API - GET
+========================================================= */
+
+async function callApiGet(
+    action,
+    params = {}
 ) {
 
-    if (!DOM.placeOrderButton) {
-        return;
+    const url =
+        new URL(
+            APP_CONFIG.apiUrl
+        );
+
+
+    url.searchParams.set(
+        "action",
+        action
+    );
+
+
+    Object.keys(params)
+        .forEach(
+            key => {
+
+                const value =
+                    params[key];
+
+
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    value !== ""
+                ) {
+
+                    url.searchParams.set(
+                        key,
+                        value
+                    );
+
+                }
+
+            }
+        );
+
+
+    const response =
+        await fetch(
+            url.toString(),
+            {
+
+                method:
+                    "GET",
+
+                redirect:
+                    "follow"
+
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Unable to connect to server."
+        );
+
     }
 
 
-    DOM.placeOrderButton.disabled =
-        loading;
+    const data =
+        await response.json();
 
 
-    if (loading) {
-
-        DOM.placeOrderButton.dataset
-            .originalText =
-            DOM.placeOrderButton.innerHTML;
-
-
-        DOM.placeOrderButton.innerHTML =
-            `
-            <span>Placing Order...</span>
-            <span>⏳</span>
-            `;
-
-    }
-
-
-    else {
-
-        DOM.placeOrderButton.innerHTML =
-            DOM.placeOrderButton.dataset
-                .originalText ||
-            `
-            <span>Confirm Order</span>
-            <span>→</span>
-            `;
-
-    }
+    return data;
 
 }
 
 
 /* =========================================================
-   TABLE REQUIRED
+   API - POST
 ========================================================= */
 
-function showTableRequired() {
+async function callApiPost(
+    action,
+    data = {}
+) {
 
-    if (DOM.menuContainer) {
+    const response =
+        await fetch(
+            APP_CONFIG.apiUrl,
+            {
 
-        DOM.menuContainer.innerHTML =
-            `
-            <div class="empty-state"
-                 style="display:block">
+                method:
+                    "POST",
 
-                <div class="empty-icon">
-                    📱
-                </div>
+                headers: {
 
-                <h3>
-                    Table QR Required
-                </h3>
+                    "Content-Type":
+                        "text/plain;charset=utf-8"
 
-                <p>
-                    Please scan the QR code
-                    placed on your table.
-                </p>
+                },
 
-            </div>
-            `;
+                body:
+                    JSON.stringify({
+
+                        action:
+                            action,
+
+                        data:
+                            data
+
+                    })
+
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Unable to connect to server."
+        );
 
     }
 
 
-    if (DOM.itemCount) {
+    const result =
+        await response.json();
 
-        DOM.itemCount.textContent =
-            "QR required";
 
-    }
+    return result;
 
 }
 
 
 /* =========================================================
-   ERROR
+   HELPERS
 ========================================================= */
 
-function showFatalError(
+function formatCurrency(
+    amount
+) {
+
+    return (
+        APP_CONFIG.currency +
+        Number(
+            amount || 0
+        ).toLocaleString(
+            "en-IN",
+            {
+                maximumFractionDigits:
+                    2
+            }
+        )
+    );
+
+}
+
+
+function showToast(
     message
 ) {
 
-    if (!DOM.menuContainer) {
-        return;
-    }
-
-
-    DOM.menuContainer.innerHTML =
-        `
-        <div class="empty-state"
-             style="display:block">
-
-            <div class="empty-icon">
-                ⚠️
-            </div>
-
-            <h3>
-                Unable to load menu
-            </h3>
-
-            <p>
-                ${escapeHtml(
-                    message
-                )}
-            </p>
-
-            <button
-                type="button"
-                class="reset-btn"
-                onclick="location.reload()">
-
-                Try Again
-
-            </button>
-
-        </div>
-        `;
-
-}
-
-
-/* =========================================================
-   LOADER
-========================================================= */
-
-function hideLoader() {
-
-    if (!DOM.pageLoader) {
-        return;
-    }
-
-
-    DOM.pageLoader.classList.add(
-        "hidden"
-    );
-
-
-    setTimeout(
-        () => {
-
-            DOM.pageLoader.style.display =
-                "none";
-
-        },
-        350
-    );
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-function showToast(
-    message,
-    type = "success"
-) {
-
     if (!DOM.toast) {
+
         return;
-    }
-
-
-    if (DOM.toastMessage) {
-
-        DOM.toastMessage.textContent =
-            message;
 
     }
 
 
-    else {
-
-        DOM.toast.textContent =
-            message;
-
-    }
-
-
-    if (DOM.toastIcon) {
-
-        DOM.toastIcon.textContent =
-            type === "error"
-                ? "!"
-                : "✓";
-
-    }
+    DOM.toast.textContent =
+        message;
 
 
     DOM.toast.classList.add(
@@ -3019,120 +3055,7 @@ function showToast(
                 );
 
             },
-            2600
-        );
-
-}
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function formatCurrency(
-    amount
-) {
-
-    const value =
-        Number(
-            amount || 0
-        );
-
-
-    return (
-        APP_CONFIG.currency +
-        value.toLocaleString(
-            "en-IN",
-            {
-                maximumFractionDigits:
-                    2
-            }
-        )
-    );
-
-}
-
-
-function roundMoney(
-    value
-) {
-
-    const number =
-        Number(
-            value
-        );
-
-
-    if (
-        !Number.isFinite(
-            number
-        )
-    ) {
-
-        return 0;
-
-    }
-
-
-    return (
-        Math.round(
-            number * 100
-        ) / 100
-    );
-
-}
-
-
-function generateLocalKey() {
-
-    if (
-        window.crypto &&
-        crypto.randomUUID
-    ) {
-
-        return crypto.randomUUID();
-
-    }
-
-
-    return (
-        "CK-" +
-        Date.now().toString(36) +
-        "-" +
-        Math.random()
-            .toString(36)
-            .slice(2, 12)
-    );
-
-}
-
-
-function escapeHtml(
-    value
-) {
-
-    return String(
-        value
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
+            2200
         );
 
 }
