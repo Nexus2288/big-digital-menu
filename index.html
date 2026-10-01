@@ -29,6 +29,8 @@
     .loc4-card{background:#fafafa;border:1px solid #e8e8e8;border-radius:18px;padding:18px;margin-bottom:18px}.loc4-top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.loc4-order{font-weight:700;font-size:18px}.loc4-table{color:#777;font-size:13px;margin-top:4px}.loc4-current{text-align:right;font-weight:700;color:#222}.loc4-message{color:#666;font-size:14px;line-height:1.5;margin:14px 0 18px}
     .loc4-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.loc4-progress-step{text-align:center;font-size:11px;color:#999}.loc4-dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin:0 auto 6px;background:#e9e9e9;color:#777;font-size:13px;font-weight:700}.loc4-progress-step.is-active{color:#171717;font-weight:700}.loc4-progress-step.is-active .loc4-dot{background:#171717;color:#fff}
     .loc4-items{border-top:1px solid #eee;margin-top:18px;padding-top:10px}.order-status-item{display:flex;justify-content:space-between;gap:15px;padding:9px 0;font-size:13px}.loc4-summary{border-top:1px solid #eee;margin-top:8px;padding-top:10px}.loc4-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#666}.loc4-row.final{color:#171717;font-size:16px;font-weight:700;padding-top:9px}.loc4-secondary{width:100%;border:1px solid #ddd;border-radius:14px;padding:13px;background:#fff;color:#171717;font:inherit;font-weight:600;cursor:pointer;margin-top:10px}
+
+    .coupon-row{display:flex;gap:8px}.coupon-row input{flex:1;min-width:0}.coupon-apply{border:0;border-radius:12px;background:#171717;color:#fff;padding:0 17px;font:inherit;font-weight:700;cursor:pointer}.coupon-apply:disabled{opacity:.55;cursor:not-allowed}.coupon-message{min-height:18px;margin-top:6px;font-size:12px;color:#777}.coupon-message.success{color:#26734d}.coupon-message.error{color:#a33}.loc4-total-stack{display:grid;grid-template-columns:1fr auto;gap:7px 12px}.loc4-total-stack span,.loc4-total-stack strong{font-size:14px}.loc4-total-stack>span:last-of-type,.loc4-total-stack>strong:last-child{font-size:18px}.next-coupon-box{margin-top:16px;padding:15px;border:1px dashed #cfc7bd;border-radius:14px;background:#faf7f2}.next-coupon-label{font-size:10px;letter-spacing:.12em;color:#888;font-weight:700}.next-coupon-code{margin-top:5px;font-size:20px;font-weight:800;letter-spacing:1px}.next-coupon-info{margin-top:5px;font-size:12px;color:#666;line-height:1.5}.next-coupon-copy{margin-top:10px;border:0;border-radius:10px;padding:9px 13px;background:#171717;color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
     @media (min-width:700px){.loc4-overlay{align-items:center;padding:24px}.loc4-panel{border-radius:26px;max-height:88vh}}
   </style>
 </head>
@@ -104,8 +106,9 @@
         <div class="loc4-field"><label for="customerName">Your Name</label><input id="customerName" type="text" maxlength="80" autocomplete="name" placeholder="Enter your name" required /></div>
         <div class="loc4-field"><label for="mobileNumber">Mobile Number</label><input id="mobileNumber" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="Enter mobile number" required /></div>
         <div class="loc4-field"><label for="tableNumberInput">Table</label><input id="tableNumberInput" class="loc4-readonly" type="text" readonly /></div>
+        <div class="loc4-field"><label for="couponInput">Coupon Code <span style="font-weight:400;color:#999">(optional)</span></label><div class="coupon-row"><input id="couponInput" type="text" maxlength="40" autocomplete="off" placeholder="Enter coupon code" /><button id="applyCouponButton" type="button" class="coupon-apply">Apply</button></div><div id="couponMessage" class="coupon-message" aria-live="polite"></div></div>
         <div class="loc4-field"><label for="specialRequest">Special Request <span style="font-weight:400;color:#999">(optional)</span></label><textarea id="specialRequest" maxlength="300" placeholder="Anything the kitchen should know?"></textarea></div>
-        <div class="loc4-total"><span>Order Total</span><strong id="confirmOrderTotal">₹0</strong></div>
+        <div class="loc4-total loc4-total-stack"><span>Subtotal</span><strong id="confirmSubtotal">₹0</strong><span id="confirmDiscountLabel" hidden>Discount</span><strong id="confirmDiscount" hidden>−₹0</strong><span>Total</span><strong id="confirmOrderTotal">₹0</strong></div>
         <button id="confirmOrderButton" class="loc4-primary" type="submit">Place Order</button>
       </form>
     </section>
@@ -132,6 +135,7 @@
           <div id="orderStatusDiscountRow" class="loc4-row" hidden><span>Discount</span><strong id="orderStatusDiscount">₹0</strong></div>
           <div class="loc4-row final"><span>Total</span><strong id="orderStatusFinalTotal">₹0</strong></div>
         </div>
+        <div id="nextCouponBox" class="next-coupon-box" hidden></div>
       </div>
       <button id="statusDoneButton" class="loc4-secondary" type="button">Back to Menu</button>
     </section>
