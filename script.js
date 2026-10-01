@@ -1,6 +1,7 @@
 /* =========================================================
    LOVE OVER COFFEE
-   CUSTOMER MENU - PART 1
+   CUSTOMER MENU - PART 3
+   SECURE TABLE + LIVE SHEET MENU + ORDER CREATION
 ========================================================= */
 
 
@@ -10,138 +11,30 @@
 
 const APP_CONFIG = {
 
-  cafeName: "Love Over Coffee",
+    cafeName: "Love Over Coffee",
 
-  tagline:
-    "Good food. Good coffee. Good moments.",
+    tagline:
+        "Good food. Good coffee. Good moments.",
 
-  currency:
-    "₹",
+    currency:
+        "₹",
 
-  logo:
-    "",
+    logo:
+        "",
 
-  heroImage:
-    "hero.jpg",
+    heroImage:
+        "",
 
-  // Google Apps Script Web App URL.
-  // Example: https://script.google.com/macros/s/XXXXX/exec
-  apiUrl:
-    "https://script.google.com/macros/s/AKfycbxNNb9AkA552XWf2t_Me3sbwNrr_JfpKPZ8QUOyk3pbMJ3dopFF4LUsGC7oToymbtcb/exec",
+    apiUrl:
+        "https://script.google.com/macros/s/AKfycbxNNb9AkA552XWf2t_Me3sbwNrr_JfpKPZ8QUOyk3pbMJ3dopFF4LUsGC7oToymbtcb/exec",
 
-  defaultTable:
-    null
+    customerFrontendUrl:
+        "https://nexus2288.github.io/big-digital-menu/",
+
+    activeOrderHours:
+        2
 
 };
-
-
-/* =========================================================
-   DEMO MENU
-   Temporary data for Part 1.
-
-   Google Sheets/API will replace this
-   in the next parts.
-========================================================= */
-
-const DEMO_MENU = [
-
-  {
-    id: "101",
-    name: "Chicken Sandwich",
-    category: "Sandwiches",
-    price: 220,
-    available: true,
-    tag:
-      "Grilled chicken, melted cheese, fresh vegetables & creamy sauce.",
-    type:
-      "nonveg"
-  },
-
-  {
-    id: "102",
-    name: "Veg Cheese Sandwich",
-    category: "Sandwiches",
-    price: 180,
-    available: true,
-    tag:
-      "Fresh vegetables, melted cheese & creamy mayo.",
-    type:
-      "veg"
-  },
-
-  {
-    id: "103",
-    name: "Special Sandwich",
-    category: "Sandwiches",
-    price: 240,
-    available: true,
-    tag:
-      "A delicious combination of grilled chicken, melted cheese, fresh vegetables and our special creamy sauce, layered between soft toasted bread.",
-    type:
-      "nonveg"
-  },
-
-  {
-    id: "104",
-    name: "Cold Coffee",
-    category: "Beverages",
-    price: 160,
-    available: true,
-    tag:
-      "Smooth chilled coffee blended with creamy milk.",
-    type:
-      "veg"
-  },
-
-  {
-    id: "105",
-    name: "Cappuccino",
-    category: "Beverages",
-    price: 150,
-    available: true,
-    tag:
-      "Rich espresso with silky steamed milk foam.",
-    type:
-      "veg"
-  },
-
-  {
-    id: "106",
-    name: "Classic Burger",
-    category: "Burgers",
-    price: 260,
-    available: true,
-    tag:
-      "Crispy lettuce, fresh vegetables and signature sauce.",
-    type:
-      "veg"
-  },
-
-  {
-    id: "107",
-    name: "Chicken Burger",
-    category: "Burgers",
-    price: 290,
-    available: true,
-    tag:
-      "Juicy grilled chicken with lettuce, cheese and house sauce.",
-    type:
-      "nonveg"
-  },
-
-  {
-    id: "108",
-    name: "Chocolate Brownie",
-    category: "Desserts",
-    price: 180,
-    available: false,
-    tag:
-      "Warm chocolate brownie with a rich fudgy centre.",
-    type:
-      "veg"
-  }
-
-];
 
 
 /* =========================================================
@@ -150,26 +43,23 @@ const DEMO_MENU = [
 
 const state = {
 
-  menu:
-    [],
+    menu: [],
 
-  categories:
-    [],
+    activeCategory: "all",
 
-  activeCategory:
-    "All",
+    search: "",
 
-  search:
-    "",
+    cart: new Map(),
 
-  cart:
-    new Map(),
+    table: null,
 
-  table:
-    null,
+    tableToken: null,
 
-  activeOrder:
-    null
+    activeOrder: null,
+
+    isLoading: false,
+
+    isSubmitting: false
 
 };
 
@@ -180,83 +70,140 @@ const state = {
 
 const DOM = {
 
-  cafeLogo:
-    document.getElementById("cafeLogo"),
+    pageLoader:
+        document.getElementById("pageLoader"),
 
-  logoFallback:
-    document.getElementById("logoFallback"),
+    app:
+        document.getElementById("app"),
 
-  cafeName:
-    document.getElementById("cafeName"),
+    cafeLogo:
+        document.getElementById("cafeLogo"),
 
-  cafeNameSmall:
-    document.getElementById("cafeNameSmall"),
+    cafeName:
+        document.getElementById("cafeName"),
 
-  cafeTagline:
-    document.getElementById("cafeTagline"),
+    cafeSubtitle:
+        document.getElementById("cafeSubtitle"),
 
-  tableNumber:
-    document.getElementById("tableNumber"),
+    infoBtn:
+        document.getElementById("infoBtn"),
 
-  searchInput:
-    document.getElementById("searchInput"),
+    infoOverlay:
+        document.getElementById("infoOverlay"),
 
-  clearSearch:
-    document.getElementById("clearSearch"),
+    closeInfo:
+        document.getElementById("closeInfo"),
 
-  categoryList:
-    document.getElementById("categoryList"),
+    searchInput:
+        document.getElementById("searchInput"),
 
-  menuContainer:
-    document.getElementById("menuContainer"),
+    clearSearch:
+        document.getElementById("clearSearch"),
 
-  emptyMenu:
-    document.getElementById("emptyMenu"),
+    categoryNav:
+        document.getElementById("categoryNav"),
 
-  cartBar:
-    document.getElementById("cartBar"),
+    menuContainer:
+        document.getElementById("menuContainer"),
 
-  cartItemCount:
-    document.getElementById("cartItemCount"),
+    emptyState:
+        document.getElementById("emptyState"),
 
-  cartTotal:
-    document.getElementById("cartTotal"),
+    resetSearch:
+        document.getElementById("resetSearch"),
 
-  viewCartButton:
-    document.getElementById("viewCartButton"),
+    itemCount:
+        document.getElementById("itemCount"),
 
-  cartOverlay:
-    document.getElementById("cartOverlay"),
+    tableNumber:
+        document.getElementById("tableNumber"),
 
-  cartDrawer:
-    document.getElementById("cartDrawer"),
+    cartButton:
+        document.getElementById("cartButton"),
 
-  closeCart:
-    document.getElementById("closeCart"),
+    cartItemCount:
+        document.getElementById("cartItemCount"),
 
-  cartItems:
-    document.getElementById("cartItems"),
+    cartTotal:
+        document.getElementById("cartTotal"),
 
-  cartEmpty:
-    document.getElementById("cartEmpty"),
+    cartOverlay:
+        document.getElementById("cartOverlay"),
 
-  drawerTotal:
-    document.getElementById("drawerTotal"),
+    closeCart:
+        document.getElementById("closeCart"),
 
-  checkoutButton:
-    document.getElementById("checkoutButton"),
+    cartItems:
+        document.getElementById("cartItems"),
 
-  toast:
-    document.getElementById("toast"),
+    emptyCart:
+        document.getElementById("emptyCart"),
 
-  activeOrderBanner:
-    document.getElementById("activeOrderBanner"),
+    continueShopping:
+        document.getElementById("continueShopping"),
 
-  activeOrderText:
-    document.getElementById("activeOrderText"),
+    cartSummary:
+        document.getElementById("cartSummary"),
 
-  viewOrderButton:
-    document.getElementById("viewOrderButton")
+    summarySubtotal:
+        document.getElementById("summarySubtotal"),
+
+    summaryTotal:
+        document.getElementById("summaryTotal"),
+
+    checkoutButton:
+        document.getElementById("checkoutButton"),
+
+    checkoutOverlay:
+        document.getElementById("checkoutOverlay"),
+
+    closeCheckout:
+        document.getElementById("closeCheckout"),
+
+    orderForm:
+        document.getElementById("orderForm"),
+
+    customerName:
+        document.getElementById("customerName"),
+
+    customerPhone:
+        document.getElementById("customerPhone"),
+
+    orderNote:
+        document.getElementById("orderNote"),
+
+    checkoutItems:
+        document.getElementById("checkoutItems"),
+
+    checkoutTotal:
+        document.getElementById("checkoutTotal"),
+
+    editCart:
+        document.getElementById("editCart"),
+
+    placeOrderButton:
+        document.getElementById("placeOrderButton"),
+
+    successOverlay:
+        document.getElementById("successOverlay"),
+
+    successOrderId:
+        document.getElementById("successOrderId"),
+
+    successTotal:
+        document.getElementById("successTotal"),
+
+    newOrderButton:
+        document.getElementById("newOrderButton"),
+
+    toast:
+        document.getElementById("toast"),
+
+    toastIcon:
+        document.getElementById("toastIcon"),
+
+    toastMessage:
+        document.getElementById("toastMessage")
 
 };
 
@@ -266,170 +213,251 @@ const DOM = {
 ========================================================= */
 
 document.addEventListener(
-  "DOMContentLoaded",
-  init
+    "DOMContentLoaded",
+    init
 );
 
 
 async function init() {
 
-  applyCafeBranding();
-  bindEvents();
-  updateCartUI();
+    try {
 
-  const tableToken = getTableTokenFromUrl();
+        applyBranding();
 
-  if (!tableToken) {
-    showTableError("Please scan the QR code placed on your table.");
-    return;
-  }
+        bindEvents();
 
-  state.table = { token: tableToken };
-  DOM.tableNumber.textContent = "Checking…";
+        prepareTableField();
 
-  try {
-    const tableResult = await apiGet_("validateTable", { token: tableToken });
+        state.tableToken =
+            getTableTokenFromUrl();
 
-    if (!tableResult.success || !tableResult.valid) {
-      throw new Error(tableResult.error || "Invalid or inactive table QR.");
+        if (!state.tableToken) {
+
+            showTableRequired();
+
+            hideLoader();
+
+            return;
+
+        }
+
+        await validateTable();
+
+        await loadMenu();
+
+        loadActiveOrder();
+
+        renderMenu();
+
+        updateCartUI();
+
+        hideLoader();
+
+    } catch (error) {
+
+        console.error(
+            "Initialization error:",
+            error
+        );
+
+        showFatalError(
+            error.message ||
+            "Unable to load the menu."
+        );
+
+        hideLoader();
+
     }
 
-    state.table = {
-      token: tableToken,
-      tableId: tableResult.tableId,
-      tableName: tableResult.tableName
-    };
-
-    DOM.tableNumber.textContent = tableResult.tableName || tableResult.tableId || "—";
-
-    await loadLiveMenu();
-    await loadActiveOrder();
-
-  } catch (error) {
-    console.error(error);
-    showTableError(error.message || "Unable to load this table.");
-  }
 }
-
-async function loadLiveMenu() {
-  const response = await apiGet_("getMenu");
-  if (!response.success) throw new Error(response.error || "Unable to load menu.");
-
-  state.menu = normalizeMenu(response.items || []);
-  buildCategories();
-  renderCategories();
-  renderMenu();
-}
-
-function getTableTokenFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const token = String(params.get("t") || params.get("token") || "").trim();
-  if (token && /^[A-Za-z0-9_-]{20,100}$/.test(token)) return token;
-  return null;
-}
-
-function showTableError(message) {
-  state.table = null;
-  DOM.tableNumber.textContent = "—";
-  DOM.categoryList.innerHTML = "";
-  DOM.menuContainer.innerHTML = `
-    <div class="table-access-error" style="padding:28px 18px;text-align:center;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.04)">
-      <div style="font-size:34px;margin-bottom:10px">⌁</div>
-      <strong style="display:block;margin-bottom:7px">Table QR Required</strong>
-      <span style="opacity:.7">${escapeHtml_(message)}</span>
-    </div>`;
-  DOM.emptyMenu.hidden = true;
-}
-
-function apiBaseUrl_() {
-  const url = String(APP_CONFIG.apiUrl || "").trim();
-  if (!url || url.includes("PASTE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-    throw new Error("Apps Script Web App URL is not configured in script.js.");
-  }
-  return url.replace(/\/$/, "");
-}
-
-async function apiGet_(action, params = {}) {
-  const query = new URLSearchParams({ action, ...params });
-  const response = await fetch(`${apiBaseUrl_()}?${query.toString()}`, {
-    method: "GET",
-    cache: "no-store"
-  });
-  if (!response.ok) throw new Error(`API request failed (${response.status}).`);
-  return response.json();
-}
-
-async function apiPost_(payload) {
-  const response = await fetch(apiBaseUrl_(), {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) throw new Error(`API request failed (${response.status}).`);
-  return response.json();
-}
-
-function escapeHtml_(value) {
-  return String(value ?? "").replace(/[&<>'"]/g, char => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;"
-  }[char]));
-}
-
 
 
 /* =========================================================
    BRANDING
 ========================================================= */
 
-function applyCafeBranding() {
+function applyBranding() {
 
-  DOM.cafeName.textContent =
-    APP_CONFIG.cafeName;
+    if (DOM.cafeName) {
 
-  DOM.cafeNameSmall.textContent =
-    APP_CONFIG.cafeName.toUpperCase();
+        DOM.cafeName.textContent =
+            APP_CONFIG.cafeName;
 
-  DOM.cafeTagline.textContent =
-    APP_CONFIG.tagline;
+    }
 
+    if (DOM.cafeSubtitle) {
 
-  if (APP_CONFIG.logo) {
+        DOM.cafeSubtitle.textContent =
+            APP_CONFIG.tagline;
 
-    DOM.cafeLogo.src =
-      APP_CONFIG.logo;
+    }
 
-    DOM.cafeLogo.hidden =
-      false;
+    if (
+        DOM.cafeLogo &&
+        APP_CONFIG.logo
+    ) {
 
-    DOM.logoFallback.hidden =
-      true;
+        DOM.cafeLogo.src =
+            APP_CONFIG.logo;
 
-  } else {
-
-    DOM.cafeLogo.hidden =
-      true;
-
-    DOM.logoFallback.hidden =
-      false;
-
-  }
+    }
 
 }
 
 
 /* =========================================================
-   TABLE DETECTION
-   IMPORTANT:
-   Part 1 only reads demo URL parameter.
-
-   Secure token-based table validation
-   will be implemented in backend part.
+   TABLE FIELD
+   Customer can see table number,
+   but cannot edit it.
 ========================================================= */
 
-function detectTableFromUrl() {
-  return getTableTokenFromUrl();
+function prepareTableField() {
+
+    if (!DOM.tableNumber) {
+        return;
+    }
+
+    DOM.tableNumber.readOnly = true;
+
+    DOM.tableNumber.setAttribute(
+        "readonly",
+        "readonly"
+    );
+
+    DOM.tableNumber.setAttribute(
+        "aria-readonly",
+        "true"
+    );
+
+    DOM.tableNumber.placeholder =
+        "Table will be detected automatically";
+
 }
 
+
+/* =========================================================
+   SECURE TABLE TOKEN
+========================================================= */
+
+function getTableTokenFromUrl() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const token =
+        String(
+            params.get("t") || ""
+        ).trim();
+
+    if (!token) {
+        return null;
+    }
+
+    /*
+     * We do not expose or trust
+     * table number from URL.
+     *
+     * Only secure token is accepted.
+     */
+
+    return token;
+
+}
+
+
+/* =========================================================
+   VALIDATE TABLE
+========================================================= */
+
+async function validateTable() {
+
+    const response =
+        await apiGet(
+            "validateTable",
+            {
+                token:
+                    state.tableToken
+            }
+        );
+
+    if (
+        !response ||
+        response.success !== true ||
+        response.valid !== true
+    ) {
+
+        throw new Error(
+            response?.error ||
+            "Invalid or inactive table QR."
+        );
+
+    }
+
+    state.table = {
+
+        tableId:
+            response.tableId,
+
+        tableName:
+            response.tableName
+
+    };
+
+
+    if (DOM.tableNumber) {
+
+        DOM.tableNumber.value =
+            response.tableName;
+
+        DOM.tableNumber.textContent =
+            response.tableName;
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD MENU
+========================================================= */
+
+async function loadMenu() {
+
+    state.isLoading = true;
+
+    try {
+
+        const response =
+            await apiGet(
+                "getMenu"
+            );
+
+        if (
+            !response ||
+            response.success !== true
+        ) {
+
+            throw new Error(
+                response?.error ||
+                "Unable to load menu."
+            );
+
+        }
+
+        state.menu =
+            normalizeMenu(
+                response.items || []
+            );
+
+    } finally {
+
+        state.isLoading = false;
+
+    }
+
+}
 
 
 /* =========================================================
@@ -438,138 +466,136 @@ function detectTableFromUrl() {
 
 function normalizeMenu(items) {
 
-  return items
-    .map((item) => {
+    return items
+        .map(
+            item => {
 
-      const id =
-        String(item.id ?? "").trim();
+                const id =
+                    String(
+                        item.id ?? ""
+                    ).trim();
 
-      const name =
-        String(item.name ?? "").trim();
+                const name =
+                    String(
+                        item.name ?? ""
+                    ).trim();
 
-      const category =
-        String(item.category ?? "Other").trim();
+                const category =
+                    String(
+                        item.category ??
+                        "Other"
+                    ).trim();
 
-      const price =
-        Number(item.price);
+                const price =
+                    Number(
+                        item.price
+                    );
 
-      const available =
-        item.available !== false;
+                const available =
+                    item.available !== false;
 
-      const tag =
-        String(item.tag ?? "").trim();
+                const tag =
+                    String(
+                        item.tag ?? ""
+                    ).trim();
 
-      const type =
-        String(item.type ?? "").toLowerCase();
+                const type =
+                    String(
+                        item.type ?? ""
+                    )
+                    .trim()
+                    .toLowerCase();
 
-      return {
+                return {
 
-        id,
+                    id,
 
-        name,
+                    name,
 
-        category,
+                    category,
 
-        price:
-          Number.isFinite(price)
-            ? price
-            : 0,
+                    price:
+                        Number.isFinite(
+                            price
+                        )
+                            ? price
+                            : 0,
 
-        available,
+                    available,
 
-        tag,
+                    tag,
 
-        type
+                    type
 
-      };
+                };
 
-    })
-    .filter(
-      (item) =>
-        item.id &&
-        item.name
-    );
-
-}
-
-
-/* =========================================================
-   CATEGORIES
-========================================================= */
-
-function buildCategories() {
-
-  const categories =
-    state.menu
-      .map(
-        (item) =>
-          item.category
-      )
-      .filter(Boolean);
-
-  state.categories = [
-    "All",
-    ...new Set(categories)
-  ];
-
-}
-
-
-/* =========================================================
-   RENDER CATEGORIES
-========================================================= */
-
-function renderCategories() {
-
-  DOM.categoryList.innerHTML =
-    "";
-
-  state.categories.forEach(
-    (category) => {
-
-      const button =
-        document.createElement("button");
-
-      button.type =
-        "button";
-
-      button.className =
-        "category-button";
-
-      if (
-        category ===
-        state.activeCategory
-      ) {
-
-        button.classList.add(
-          "active"
+            }
+        )
+        .filter(
+            item =>
+                item.id &&
+                item.name
         );
 
-      }
+}
 
-      button.textContent =
-        category;
 
-      button.addEventListener(
-        "click",
-        () => {
+/* =========================================================
+   CATEGORY NAVIGATION
+   Uses existing category buttons
+   already present in index.html.
+========================================================= */
 
-          state.activeCategory =
-            category;
+function setupCategories() {
 
-          renderCategories();
+    if (!DOM.categoryNav) {
+        return;
+    }
 
-          renderMenu();
+    const buttons =
+        DOM.categoryNav.querySelectorAll(
+            ".category-btn"
+        );
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const category =
+                        String(
+                            button.dataset.category ||
+                            "all"
+                        )
+                        .trim()
+                        .toLowerCase();
+
+                    state.activeCategory =
+                        category;
+
+                    buttons.forEach(
+                        item => {
+
+                            item.classList.remove(
+                                "active"
+                            );
+
+                        }
+                    );
+
+                    button.classList.add(
+                        "active"
+                    );
+
+                    renderMenu();
+
+                }
+            );
 
         }
-      );
-
-      DOM.categoryList.appendChild(
-        button
-      );
-
-    }
-  );
+    );
 
 }
 
@@ -580,42 +606,66 @@ function renderCategories() {
 
 function getFilteredMenu() {
 
-  const search =
-    state.search
-      .trim()
-      .toLowerCase();
+    const search =
+        state.search
+            .trim()
+            .toLowerCase();
 
-  return state.menu.filter(
-    (item) => {
+    const category =
+        state.activeCategory
+            .trim()
+            .toLowerCase();
 
-      const matchesCategory =
-        state.activeCategory ===
-          "All" ||
-        item.category ===
-          state.activeCategory;
 
-      const searchableText =
-        [
-          item.name,
-          item.category,
-          item.tag
-        ]
-          .join(" ")
-          .toLowerCase();
+    return state.menu.filter(
+        item => {
 
-      const matchesSearch =
-        !search ||
-        searchableText.includes(
-          search
-        );
+            const itemCategory =
+                item.category
+                    .trim()
+                    .toLowerCase()
+                    .replace(
+                        /[^a-z0-9]+/g,
+                        "-"
+                    )
+                    .replace(
+                        /^-|-$|/g,
+                        ""
+                    );
 
-      return (
-        matchesCategory &&
-        matchesSearch
-      );
+            const categoryMatch =
+                category === "all" ||
+                itemCategory === category ||
+                item.category
+                    .trim()
+                    .toLowerCase() ===
+                    category;
 
-    }
-  );
+
+            const searchableText =
+                [
+                    item.name,
+                    item.category,
+                    item.tag
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+
+            const searchMatch =
+                !search ||
+                searchableText.includes(
+                    search
+                );
+
+
+            return (
+                categoryMatch &&
+                searchMatch
+            );
+
+        }
+    );
 
 }
 
@@ -626,204 +676,281 @@ function getFilteredMenu() {
 
 function renderMenu() {
 
-  DOM.menuContainer.innerHTML =
-    "";
+    if (!DOM.menuContainer) {
+        return;
+    }
 
-  const items =
-    getFilteredMenu();
+    const items =
+        getFilteredMenu();
 
-  DOM.emptyMenu.hidden =
-    items.length !== 0;
+    DOM.menuContainer.innerHTML =
+        "";
 
-  items.forEach(
-    (item) => {
 
-      const card =
-        createMenuCard(item);
+    if (DOM.itemCount) {
 
-      DOM.menuContainer.appendChild(
-        card
-      );
+        DOM.itemCount.textContent =
+            `${items.length} ${
+                items.length === 1
+                    ? "item"
+                    : "items"
+            }`;
 
     }
-  );
+
+
+    if (DOM.emptyState) {
+
+        DOM.emptyState.style.display =
+            items.length === 0
+                ? "block"
+                : "none";
+
+    }
+
+
+    items.forEach(
+        item => {
+
+            DOM.menuContainer.appendChild(
+                createMenuCard(item)
+            );
+
+        }
+    );
 
 }
 
 
 /* =========================================================
-   CREATE MENU CARD
+   MENU CARD
 ========================================================= */
 
 function createMenuCard(item) {
 
-  const card =
-    document.createElement("article");
+    const card =
+        document.createElement(
+            "article"
+        );
 
-  card.className =
-    "menu-card";
+    card.className =
+        "menu-card";
 
-  if (!item.available) {
 
-    card.classList.add(
-      "unavailable"
+    if (!item.available) {
+
+        card.classList.add(
+            "unavailable"
+        );
+
+    }
+
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+    content.className =
+        "menu-card-content";
+
+
+    const name =
+        document.createElement(
+            "h3"
+        );
+
+    name.textContent =
+        item.name;
+
+
+    const tag =
+        document.createElement(
+            "p"
+        );
+
+    tag.className =
+        "menu-card-tag";
+
+    tag.textContent =
+        item.tag || "";
+
+
+    if (!item.tag) {
+
+        tag.style.display =
+            "none";
+
+    }
+
+
+    const meta =
+        document.createElement(
+            "div"
+        );
+
+    meta.className =
+        "menu-card-meta";
+
+
+    const category =
+        document.createElement(
+            "span"
+        );
+
+    category.textContent =
+        item.category;
+
+
+    const price =
+        document.createElement(
+            "strong"
+        );
+
+    price.textContent =
+        formatCurrency(
+            item.price
+        );
+
+
+    meta.appendChild(
+        category
     );
 
-  }
-
-
-  const top =
-    document.createElement("div");
-
-  top.className =
-    "menu-card-top";
-
-
-  const content =
-    document.createElement("div");
-
-  content.className =
-    "menu-card-content";
-
-
-  const name =
-    document.createElement("h3");
-
-  name.className =
-    "menu-card-name";
-
-  name.textContent =
-    item.name;
-
-
-  const tag =
-    document.createElement("div");
-
-  tag.className =
-    "menu-card-tag";
-
-  tag.textContent =
-    item.tag;
-
-  tag.hidden =
-    !item.tag;
-
-
-  const category =
-    document.createElement("span");
-
-  category.className =
-    "menu-card-category";
-
-  category.textContent =
-    item.category;
-
-
-  const price =
-    document.createElement("div");
-
-  price.className =
-    "menu-card-price";
-
-  price.textContent =
-    formatCurrency(item.price);
-
-
-  content.appendChild(
-    name
-  );
-
-  content.appendChild(
-    tag
-  );
-
-  content.appendChild(
-    category
-  );
-
-  content.appendChild(
-    price
-  );
-
-
-  const right =
-    document.createElement("div");
-
-  right.className =
-    "menu-card-right";
-
-
-  const quantity =
-    getCartQuantity(item.id);
-
-
-  if (!item.available) {
-
-    const stock =
-      document.createElement("span");
-
-    stock.className =
-      "out-of-stock";
-
-    stock.textContent =
-      "Out of Stock";
-
-    right.appendChild(
-      stock
+    meta.appendChild(
+        price
     );
 
-  } else if (quantity > 0) {
 
-    right.appendChild(
-      createQuantityControl(
-        item.id,
-        quantity
-      )
+    content.appendChild(
+        name
     );
 
-  } else {
-
-    const button =
-      document.createElement("button");
-
-    button.type =
-      "button";
-
-    button.className =
-      "add-button";
-
-    button.textContent =
-      "Add";
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        addToCart(item);
-
-      }
+    content.appendChild(
+        tag
     );
 
-    right.appendChild(
-      button
+    content.appendChild(
+        meta
     );
 
-  }
+
+    const right =
+        document.createElement(
+            "div"
+        );
+
+    right.className =
+        "menu-card-right";
 
 
-  top.appendChild(
-    content
-  );
+    const quantity =
+        getCartQuantity(
+            item.id
+        );
 
-  top.appendChild(
-    right
-  );
 
-  card.appendChild(
-    top
-  );
+    if (!item.available) {
 
-  return card;
+        const stock =
+            document.createElement(
+                "span"
+            );
+
+        stock.className =
+            "out-of-stock";
+
+        stock.textContent =
+            "Out of Stock";
+
+        right.appendChild(
+            stock
+        );
+
+    } else if (
+        quantity > 0
+    ) {
+
+        right.appendChild(
+            createQuantityControl(
+                item.id,
+                quantity
+            )
+        );
+
+    } else {
+
+        const add =
+            document.createElement(
+                "button"
+            );
+
+        add.type =
+            "button";
+
+        add.className =
+            "add-button";
+
+        add.textContent =
+            "Add";
+
+        add.addEventListener(
+            "click",
+            () => {
+
+                addToCart(
+                    item
+                );
+
+            }
+        );
+
+        right.appendChild(
+            add
+        );
+
+    }
+
+
+    card.appendChild(
+        content
+    );
+
+    card.appendChild(
+        right
+    );
+
+
+    /*
+     * Veg / Non-Veg indicator.
+     */
+
+    if (
+        item.type === "veg" ||
+        item.type === "nonveg"
+    ) {
+
+        const typeBadge =
+            document.createElement(
+                "span"
+            );
+
+        typeBadge.className =
+            `food-type ${item.type}`;
+
+        typeBadge.textContent =
+            item.type === "veg"
+                ? "VEG"
+                : "NON-VEG";
+
+        card.appendChild(
+            typeBadge
+        );
+
+    }
+
+
+    return card;
 
 }
 
@@ -833,101 +960,101 @@ function createMenuCard(item) {
 ========================================================= */
 
 function createQuantityControl(
-  itemId,
-  quantity
+    itemId,
+    quantity
 ) {
 
-  const wrapper =
-    document.createElement("div");
+    const wrapper =
+        document.createElement(
+            "div"
+        );
 
-  wrapper.className =
-    "quantity-control";
-
-
-  const minus =
-    document.createElement("button");
-
-  minus.type =
-    "button";
-
-  minus.className =
-    "quantity-button";
-
-  minus.textContent =
-    "−";
-
-  minus.setAttribute(
-    "aria-label",
-    "Decrease quantity"
-  );
-
-  minus.addEventListener(
-    "click",
-    () => {
-
-      changeQuantity(
-        itemId,
-        -1
-      );
-
-    }
-  );
+    wrapper.className =
+        "quantity-control";
 
 
-  const number =
-    document.createElement("span");
+    const minus =
+        document.createElement(
+            "button"
+        );
 
-  number.className =
-    "quantity-number";
+    minus.type =
+        "button";
 
-  number.textContent =
-    quantity;
+    minus.className =
+        "quantity-button";
 
-
-  const plus =
-    document.createElement("button");
-
-  plus.type =
-    "button";
-
-  plus.className =
-    "quantity-button";
-
-  plus.textContent =
-    "+";
-
-  plus.setAttribute(
-    "aria-label",
-    "Increase quantity"
-  );
-
-  plus.addEventListener(
-    "click",
-    () => {
-
-      changeQuantity(
-        itemId,
-        1
-      );
-
-    }
-  );
+    minus.textContent =
+        "−";
 
 
-  wrapper.appendChild(
-    minus
-  );
+    minus.addEventListener(
+        "click",
+        () => {
 
-  wrapper.appendChild(
-    number
-  );
+            changeQuantity(
+                itemId,
+                -1
+            );
 
-  wrapper.appendChild(
-    plus
-  );
+        }
+    );
 
 
-  return wrapper;
+    const number =
+        document.createElement(
+            "span"
+        );
+
+    number.className =
+        "quantity-number";
+
+    number.textContent =
+        quantity;
+
+
+    const plus =
+        document.createElement(
+            "button"
+        );
+
+    plus.type =
+        "button";
+
+    plus.className =
+        "quantity-button";
+
+    plus.textContent =
+        "+";
+
+
+    plus.addEventListener(
+        "click",
+        () => {
+
+            changeQuantity(
+                itemId,
+                1
+            );
+
+        }
+    );
+
+
+    wrapper.appendChild(
+        minus
+    );
+
+    wrapper.appendChild(
+        number
+    );
+
+    wrapper.appendChild(
+        plus
+    );
+
+
+    return wrapper;
 
 }
 
@@ -938,134 +1065,184 @@ function createQuantityControl(
 
 function addToCart(item) {
 
-  if (!item.available) {
+    if (!item.available) {
 
-    showToast(
-      "This item is currently unavailable."
+        showToast(
+            "This item is currently unavailable.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const current =
+        state.cart.get(
+            item.id
+        ) || 0;
+
+
+    if (current >= 50) {
+
+        showToast(
+            "Maximum quantity reached.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    state.cart.set(
+        item.id,
+        current + 1
     );
 
-    return;
 
-  }
+    renderMenu();
 
-  const current =
-    state.cart.get(item.id) || 0;
+    renderCart();
 
-  state.cart.set(
-    item.id,
-    current + 1
-  );
+    updateCartUI();
 
-  renderMenu();
-
-  updateCartUI();
-
-  showToast(
-    `${item.name} added to cart`
-  );
+    showToast(
+        `${item.name} added to cart`
+    );
 
 }
 
 
 function changeQuantity(
-  itemId,
-  amount
+    itemId,
+    amount
 ) {
 
-  const current =
-    state.cart.get(itemId) || 0;
+    const current =
+        state.cart.get(
+            itemId
+        ) || 0;
 
-  const next =
-    current + amount;
 
-  if (next <= 0) {
+    const next =
+        current + amount;
 
-    state.cart.delete(
-      itemId
-    );
 
-  } else {
+    if (next <= 0) {
 
-    state.cart.set(
-      itemId,
-      next
-    );
+        state.cart.delete(
+            itemId
+        );
 
-  }
+    } else if (
+        next <= 50
+    ) {
 
-  renderMenu();
+        state.cart.set(
+            itemId,
+            next
+        );
 
-  renderCart();
+    }
 
-  updateCartUI();
+
+    renderMenu();
+
+    renderCart();
+
+    updateCartUI();
 
 }
 
 
 function getCartQuantity(
-  itemId
+    itemId
 ) {
 
-  return (
-    state.cart.get(itemId) ||
-    0
-  );
+    return (
+        state.cart.get(
+            itemId
+        ) || 0
+    );
 
 }
 
 
 /* =========================================================
-   CART CALCULATIONS
+   CART DATA
 ========================================================= */
 
 function getCartItems() {
 
-  const items = [];
+    const items = [];
 
-  state.cart.forEach(
-    (quantity, itemId) => {
 
-      const item =
-        state.menu.find(
-          (menuItem) =>
-            menuItem.id === itemId
-        );
+    state.cart.forEach(
+        (
+            quantity,
+            itemId
+        ) => {
 
-      if (!item) {
-        return;
-      }
+            const item =
+                state.menu.find(
+                    menuItem =>
+                        menuItem.id ===
+                        itemId
+                );
 
-      items.push({
 
-        ...item,
+            if (!item) {
+                return;
+            }
 
-        quantity,
 
-        lineTotal:
-          item.price *
-          quantity
+            items.push({
 
-      });
+                id:
+                    item.id,
 
-    }
-  );
+                name:
+                    item.name,
 
-  return items;
+                category:
+                    item.category,
+
+                price:
+                    item.price,
+
+                quantity,
+
+                lineTotal:
+                    roundMoney(
+                        item.price *
+                        quantity
+                    )
+
+            });
+
+        }
+    );
+
+
+    return items;
 
 }
 
 
 function getCartTotal() {
 
-  return getCartItems()
-    .reduce(
-      (
-        total,
-        item
-      ) =>
-        total +
-        item.lineTotal,
-      0
+    return roundMoney(
+        getCartItems()
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    item.lineTotal,
+                0
+            )
     );
 
 }
@@ -1073,16 +1250,16 @@ function getCartTotal() {
 
 function getCartItemCount() {
 
-  return getCartItems()
-    .reduce(
-      (
-        total,
-        item
-      ) =>
-        total +
-        item.quantity,
-      0
-    );
+    return getCartItems()
+        .reduce(
+            (
+                total,
+                item
+            ) =>
+                total +
+                item.quantity,
+            0
+        );
 
 }
 
@@ -1093,310 +1270,961 @@ function getCartItemCount() {
 
 function updateCartUI() {
 
-  const count =
-    getCartItemCount();
+    const count =
+        getCartItemCount();
 
-  const total =
-    getCartTotal();
-
-  DOM.cartBar.hidden =
-    count === 0;
-
-  DOM.cartItemCount.textContent =
-    `${count} ${
-      count === 1
-        ? "item"
-        : "items"
-    }`;
-
-  DOM.cartTotal.textContent =
-    formatCurrency(total);
-
-  DOM.drawerTotal.textContent =
-    formatCurrency(total);
-
-}
+    const total =
+        getCartTotal();
 
 
-function renderCart() {
+    if (DOM.cartItemCount) {
 
-  const items =
-    getCartItems();
-
-  DOM.cartItems.innerHTML =
-    "";
-
-  DOM.cartEmpty.hidden =
-    items.length !== 0;
-
-  items.forEach(
-    (item) => {
-
-      const row =
-        document.createElement("div");
-
-      row.className =
-        "cart-item";
-
-
-      const info =
-        document.createElement("div");
-
-      info.className =
-        "cart-item-info";
-
-
-      const name =
-        document.createElement("div");
-
-      name.className =
-        "cart-item-name";
-
-      name.textContent =
-        item.name;
-
-
-      const price =
-        document.createElement("div");
-
-      price.className =
-        "cart-item-price";
-
-      price.textContent =
-        `${formatCurrency(
-          item.price
-        )} × ${item.quantity} = ${formatCurrency(
-          item.lineTotal
-        )}`;
-
-
-      info.appendChild(
-        name
-      );
-
-      info.appendChild(
-        price
-      );
-
-
-      const controls =
-        document.createElement("div");
-
-      controls.className =
-        "cart-item-controls";
-
-      controls.appendChild(
-        createQuantityControl(
-          item.id,
-          item.quantity
-        )
-      );
-
-
-      row.appendChild(
-        info
-      );
-
-      row.appendChild(
-        controls
-      );
-
-
-      DOM.cartItems.appendChild(
-        row
-      );
+        DOM.cartItemCount.textContent =
+            count;
 
     }
-  );
 
-  updateCartUI();
+
+    if (DOM.cartTotal) {
+
+        DOM.cartTotal.textContent =
+            formatCurrency(
+                total
+            );
+
+    }
+
+
+    if (DOM.summarySubtotal) {
+
+        DOM.summarySubtotal.textContent =
+            formatCurrency(
+                total
+            );
+
+    }
+
+
+    if (DOM.summaryTotal) {
+
+        DOM.summaryTotal.textContent =
+            formatCurrency(
+                total
+            );
+
+    }
+
+
+    if (DOM.cartSummary) {
+
+        DOM.cartSummary.style.display =
+            count > 0
+                ? ""
+                : "none";
+
+    }
 
 }
 
 
 /* =========================================================
-   CART DRAWER
+   RENDER CART
+========================================================= */
+
+function renderCart() {
+
+    const items =
+        getCartItems();
+
+
+    if (!DOM.cartItems) {
+        return;
+    }
+
+
+    DOM.cartItems.innerHTML =
+        "";
+
+
+    if (DOM.emptyCart) {
+
+        DOM.emptyCart.style.display =
+            items.length === 0
+                ? ""
+                : "none";
+
+    }
+
+
+    items.forEach(
+        item => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+            row.className =
+                "cart-item";
+
+
+            const info =
+                document.createElement(
+                    "div"
+                );
+
+            info.className =
+                "cart-item-info";
+
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+            name.textContent =
+                item.name;
+
+
+            const price =
+                document.createElement(
+                    "span"
+                );
+
+            price.textContent =
+                `${formatCurrency(
+                    item.price
+                )} × ${item.quantity}`;
+
+
+            info.appendChild(
+                name
+            );
+
+            info.appendChild(
+                price
+            );
+
+
+            const controls =
+                createQuantityControl(
+                    item.id,
+                    item.quantity
+                );
+
+
+            row.appendChild(
+                info
+            );
+
+            row.appendChild(
+                controls
+            );
+
+
+            DOM.cartItems.appendChild(
+                row
+            );
+
+        }
+    );
+
+
+    updateCartUI();
+
+}
+
+
+/* =========================================================
+   CHECKOUT PREVIEW
+========================================================= */
+
+function renderCheckout() {
+
+    const items =
+        getCartItems();
+
+
+    if (!DOM.checkoutItems) {
+        return;
+    }
+
+
+    DOM.checkoutItems.innerHTML =
+        "";
+
+
+    items.forEach(
+        item => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+            row.className =
+                "checkout-item";
+
+
+            const name =
+                document.createElement(
+                    "span"
+                );
+
+            name.textContent =
+                `${item.name} × ${item.quantity}`;
+
+
+            const price =
+                document.createElement(
+                    "strong"
+                );
+
+            price.textContent =
+                formatCurrency(
+                    item.lineTotal
+                );
+
+
+            row.appendChild(
+                name
+            );
+
+            row.appendChild(
+                price
+            );
+
+
+            DOM.checkoutItems.appendChild(
+                row
+            );
+
+        }
+    );
+
+
+    if (DOM.checkoutTotal) {
+
+        DOM.checkoutTotal.textContent =
+            formatCurrency(
+                getCartTotal()
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   CART MODAL
 ========================================================= */
 
 function openCart() {
 
-  renderCart();
+    renderCart();
 
-  DOM.cartOverlay.hidden =
-    false;
-
-  DOM.cartDrawer.classList.add(
-    "open"
-  );
-
-  DOM.cartDrawer.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  document.body.style.overflow =
-    "hidden";
+    showOverlay(
+        DOM.cartOverlay
+    );
 
 }
 
 
 function closeCart() {
 
-  DOM.cartDrawer.classList.remove(
-    "open"
-  );
+    hideOverlay(
+        DOM.cartOverlay
+    );
 
-  DOM.cartDrawer.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+}
 
-  setTimeout(
-    () => {
 
-      DOM.cartOverlay.hidden =
+function openCheckout() {
+
+    if (
+        getCartItemCount() === 0
+    ) {
+
+        showToast(
+            "Your cart is empty.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    renderCheckout();
+
+    hideOverlay(
+        DOM.cartOverlay
+    );
+
+    showOverlay(
+        DOM.checkoutOverlay
+    );
+
+}
+
+
+function closeCheckout() {
+
+    hideOverlay(
+        DOM.checkoutOverlay
+    );
+
+}
+
+
+/* =========================================================
+   CREATE ORDER
+========================================================= */
+
+async function submitOrder(
+    event
+) {
+
+    event.preventDefault();
+
+
+    if (state.isSubmitting) {
+        return;
+    }
+
+
+    if (
+        !state.tableToken ||
+        !state.table
+    ) {
+
+        showToast(
+            "Please scan the table QR code again.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const items =
+        getCartItems();
+
+
+    if (
+        items.length === 0
+    ) {
+
+        showToast(
+            "Your cart is empty.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const customerName =
+        String(
+            DOM.customerName?.value ||
+            ""
+        ).trim();
+
+
+    const mobile =
+        String(
+            DOM.customerPhone?.value ||
+            ""
+        ).trim();
+
+
+    const specialRequest =
+        String(
+            DOM.orderNote?.value ||
+            ""
+        ).trim();
+
+
+    if (!customerName) {
+
+        showToast(
+            "Please enter your name.",
+            "error"
+        );
+
+        DOM.customerName?.focus();
+
+        return;
+
+    }
+
+
+    /*
+     * Current backend requires mobile.
+     */
+
+    if (!mobile) {
+
+        showToast(
+            "Please enter your mobile number.",
+            "error"
+        );
+
+        DOM.customerPhone?.focus();
+
+        return;
+
+    }
+
+
+    const cleanMobile =
+        mobile.replace(
+            /[\s-]/g,
+            ""
+        );
+
+
+    if (
+        !/^[0-9+]{10,15}$/.test(
+            cleanMobile
+        )
+    ) {
+
+        showToast(
+            "Please enter a valid mobile number.",
+            "error"
+        );
+
+        DOM.customerPhone?.focus();
+
+        return;
+
+    }
+
+
+    state.isSubmitting =
         true;
 
-    },
-    280
-  );
 
-  document.body.style.overflow =
-    "";
+    setPlaceOrderLoading(
+        true
+    );
+
+
+    try {
+
+        /*
+         * Customer key:
+         * generated locally once,
+         * then sent with order.
+         */
+
+        let customerKey =
+            localStorage.getItem(
+                "cafe_customer_key"
+            );
+
+
+        if (!customerKey) {
+
+            customerKey =
+                generateLocalKey();
+
+            localStorage.setItem(
+                "cafe_customer_key",
+                customerKey
+            );
+
+        }
+
+
+        /*
+         * IMPORTANT:
+         * Backend currently expects
+         * action + order fields directly.
+         *
+         * Do NOT wrap this in { data: ... }.
+         */
+
+        const response =
+            await apiPost({
+
+                action:
+                    "createOrder",
+
+                tableToken:
+                    state.tableToken,
+
+                customerName,
+
+                mobile:
+                    cleanMobile,
+
+                specialRequest,
+
+                customerKey,
+
+                couponCode:
+                    "",
+
+                items:
+                    items.map(
+                        item => ({
+
+                            id:
+                                item.id,
+
+                            quantity:
+                                item.quantity
+
+                        })
+                    )
+
+            });
+
+
+        if (
+            !response ||
+            response.success !== true
+        ) {
+
+            throw new Error(
+                response?.error ||
+                "Order could not be placed."
+            );
+
+        }
+
+
+        const order =
+            {
+
+                orderId:
+                    response.orderId,
+
+                customerKey:
+                    response.customerKey ||
+                    customerKey,
+
+                table:
+                    response.table,
+
+                status:
+                    response.status,
+
+                items:
+                    response.items || items,
+
+                subtotal:
+                    response.subtotal,
+
+                couponCode:
+                    response.couponCode || "",
+
+                discountPercent:
+                    response.discountPercent || 0,
+
+                discountAmount:
+                    response.discountAmount || 0,
+
+                finalTotal:
+                    response.finalTotal,
+
+                createdAt:
+                    response.createdAt ||
+                    new Date().toISOString(),
+
+                savedAt:
+                    Date.now()
+
+            };
+
+
+        state.activeOrder =
+            order;
+
+
+        saveActiveOrder(
+            order
+        );
+
+
+        /*
+         * Show success.
+         */
+
+        if (DOM.successOrderId) {
+
+            DOM.successOrderId.textContent =
+                order.orderId;
+
+        }
+
+
+        if (DOM.successTotal) {
+
+            DOM.successTotal.textContent =
+                formatCurrency(
+                    order.finalTotal
+                );
+
+        }
+
+
+        hideOverlay(
+            DOM.checkoutOverlay
+        );
+
+        showOverlay(
+            DOM.successOverlay
+        );
+
+
+        /*
+         * New order starts with
+         * an empty cart.
+         */
+
+        state.cart.clear();
+
+        renderMenu();
+
+        updateCartUI();
+
+
+        showToast(
+            "Order placed successfully."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Order submission error:",
+            error
+        );
+
+        showToast(
+            error.message ||
+            "Unable to place order.",
+            "error"
+        );
+
+    } finally {
+
+        state.isSubmitting =
+            false;
+
+        setPlaceOrderLoading(
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   NEW ORDER
+========================================================= */
+
+function startNewOrder() {
+
+    state.cart.clear();
+
+    state.activeOrder =
+        null;
+
+
+    /*
+     * Do not delete customer key.
+     * Same browser/customer can
+     * continue using the system.
+     */
+
+    renderMenu();
+
+    updateCartUI();
+
+
+    hideOverlay(
+        DOM.successOverlay
+    );
+
+
+    showToast(
+        "Ready for a new order."
+    );
 
 }
 
 
 /* =========================================================
    ACTIVE ORDER
+   Local recovery for 2 hours.
 ========================================================= */
 
-async function loadActiveOrder() {
-  if (!state.table?.token) return;
+function loadActiveOrder() {
 
-  const key = `cafe_active_order_${state.table.token}`;
+    try {
 
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return;
+        const raw =
+            localStorage.getItem(
+                "cafe_active_order"
+            );
 
-    const local = JSON.parse(saved);
-    if (!local?.orderId || !local?.customerKey || !local?.savedAt) return;
 
-    const ageHours = (Date.now() - Number(local.savedAt)) / 3600000;
-    if (ageHours > 2) {
-      localStorage.removeItem(key);
-      return;
+        if (!raw) {
+            return;
+        }
+
+
+        const order =
+            JSON.parse(
+                raw
+            );
+
+
+        if (
+            !order ||
+            !order.orderId ||
+            !order.savedAt
+        ) {
+
+            clearActiveOrder();
+
+            return;
+
+        }
+
+
+        const age =
+            Date.now() -
+            Number(
+                order.savedAt
+            );
+
+
+        const maxAge =
+            Number(
+                APP_CONFIG.activeOrderHours
+            ) *
+            60 *
+            60 *
+            1000;
+
+
+        if (
+            age >
+            maxAge
+        ) {
+
+            clearActiveOrder();
+
+            return;
+
+        }
+
+
+        state.activeOrder =
+            order;
+
+
+    } catch (error) {
+
+        console.warn(
+            "Could not recover active order.",
+            error
+        );
+
+        clearActiveOrder();
+
     }
 
-    const response = await apiGet_("getOrder", {
-      orderId: local.orderId,
-      customerKey: local.customerKey
-    });
+}
 
-    if (!response.success || !response.found) {
-      localStorage.removeItem(key);
-      return;
+
+function saveActiveOrder(
+    order
+) {
+
+    try {
+
+        localStorage.setItem(
+            "cafe_active_order",
+            JSON.stringify(
+                order
+            )
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Could not save active order.",
+            error
+        );
+
     }
 
-    state.activeOrder = response.order;
-    state.activeOrder.customerKey = local.customerKey;
-    state.activeOrder.savedAt = local.savedAt;
-    showActiveOrder(state.activeOrder);
-
-  } catch (error) {
-    console.warn("Could not load active order.", error);
-  }
 }
 
-function showActiveOrder(order) {
-  if (!order || !DOM.activeOrderBanner) return;
-  DOM.activeOrderBanner.hidden = false;
-  DOM.activeOrderText.textContent = `Order #${order.orderId} • ${getFriendlyStatus_(order.status)}`;
-}
-
-function saveActiveOrder(order) {
-  if (!state.table?.token || !order?.orderId || !order?.customerKey) return;
-  try {
-    localStorage.setItem(`cafe_active_order_${state.table.token}`, JSON.stringify({
-      orderId: order.orderId,
-      customerKey: order.customerKey,
-      savedAt: Date.now()
-    }));
-  } catch (error) {
-    console.warn("Could not save active order.", error);
-  }
-}
 
 function clearActiveOrder() {
-  if (!state.table?.token) return;
-  try { localStorage.removeItem(`cafe_active_order_${state.table.token}`); } catch (_) {}
+
+    state.activeOrder =
+        null;
+
+    localStorage.removeItem(
+        "cafe_active_order"
+    );
+
 }
-
-function getFriendlyStatus_(status) {
-  if (status === "New") return "Order Received";
-  if (status === "Preparing") return "Preparing";
-  if (status === "Completed") return "Completed";
-  if (status === "Cancelled") return "Cancelled";
-  return status || "Unknown";
-}
-
-function startOrderPolling_() {
-  clearInterval(startOrderPolling_.timer);
-  if (!state.activeOrder?.orderId || !state.activeOrder?.customerKey) return;
-
-  startOrderPolling_.timer = setInterval(async () => {
-    try {
-      const response = await apiGet_("getOrder", {
-        orderId: state.activeOrder.orderId,
-        customerKey: state.activeOrder.customerKey
-      });
-      if (!response.success || !response.found) return;
-      state.activeOrder = { ...state.activeOrder, ...response.order, customerKey: state.activeOrder.customerKey };
-      showActiveOrder(state.activeOrder);
-      if (response.order.status === "Completed" || response.order.status === "Cancelled") {
-        clearInterval(startOrderPolling_.timer);
-      }
-      if (document.getElementById("orderStatusModal")?.dataset.open === "true") {
-        renderOrderStatus_(state.activeOrder);
-      }
-    } catch (error) {
-      console.warn("Order status refresh failed.", error);
-    }
-  }, 15000);
-}
-
 
 
 /* =========================================================
-   SEARCH
+   API - GET
 ========================================================= */
 
-function handleSearch() {
+async function apiGet(
+    action,
+    params = {}
+) {
 
-  state.search =
-    DOM.searchInput.value;
+    if (!APP_CONFIG.apiUrl) {
 
-  DOM.clearSearch.hidden =
-    !state.search;
+        throw new Error(
+            "Apps Script API URL is missing."
+        );
 
-  renderMenu();
+    }
+
+
+    const query =
+        new URLSearchParams();
+
+
+    query.set(
+        "action",
+        action
+    );
+
+
+    Object.keys(
+        params
+    ).forEach(
+        key => {
+
+            const value =
+                params[key];
+
+
+            if (
+                value !== undefined &&
+                value !== null
+            ) {
+
+                query.set(
+                    key,
+                    String(value)
+                );
+
+            }
+
+        }
+    );
+
+
+    const response =
+        await fetch(
+            APP_CONFIG.apiUrl +
+            "?" +
+            query.toString(),
+            {
+                method: "GET",
+                redirect: "follow",
+                cache: "no-store"
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Server connection failed."
+        );
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    return data;
 
 }
 
 
-function clearSearch() {
+/* =========================================================
+   API - POST
+========================================================= */
 
-  DOM.searchInput.value =
-    "";
+async function apiPost(
+    payload
+) {
 
-  state.search =
-    "";
+    if (!APP_CONFIG.apiUrl) {
 
-  DOM.clearSearch.hidden =
-    true;
+        throw new Error(
+            "Apps Script API URL is missing."
+        );
 
-  renderMenu();
+    }
+
+
+    /*
+     * text/plain avoids unnecessary
+     * CORS preflight with Apps Script.
+     */
+
+    const response =
+        await fetch(
+            APP_CONFIG.apiUrl,
+            {
+
+                method:
+                    "POST",
+
+                headers:
+                    {
+                        "Content-Type":
+                            "text/plain;charset=utf-8"
+                    },
+
+                body:
+                    JSON.stringify(
+                        payload
+                    ),
+
+                redirect:
+                    "follow"
+
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Server connection failed."
+        );
+
+    }
+
+
+    return await response.json();
 
 }
 
@@ -1407,227 +2235,716 @@ function clearSearch() {
 
 function bindEvents() {
 
-  DOM.searchInput.addEventListener(
-    "input",
-    handleSearch
-  );
+    setupCategories();
 
 
-  DOM.clearSearch.addEventListener(
-    "click",
-    clearSearch
-  );
+    if (DOM.searchInput) {
+
+        DOM.searchInput.addEventListener(
+            "input",
+            () => {
+
+                state.search =
+                    DOM.searchInput.value;
+
+                if (DOM.clearSearch) {
+
+                    DOM.clearSearch.hidden =
+                        !state.search;
+
+                }
+
+                renderMenu();
+
+            }
+        );
+
+    }
 
 
-  DOM.viewCartButton.addEventListener(
-    "click",
-    openCart
-  );
+    if (DOM.clearSearch) {
+
+        DOM.clearSearch.addEventListener(
+            "click",
+            clearSearch
+        );
+
+    }
 
 
-  DOM.closeCart.addEventListener(
-    "click",
-    closeCart
-  );
+    if (DOM.resetSearch) {
+
+        DOM.resetSearch.addEventListener(
+            "click",
+            () => {
+
+                clearSearch();
+
+                state.activeCategory =
+                    "all";
+
+                activateAllCategory();
+
+                renderMenu();
+
+            }
+        );
+
+    }
 
 
-  DOM.cartOverlay.addEventListener(
-    "click",
-    closeCart
-  );
+    if (DOM.cartButton) {
+
+        DOM.cartButton.addEventListener(
+            "click",
+            openCart
+        );
+
+    }
 
 
-  DOM.checkoutButton.addEventListener("click", openCheckoutModal);
+    if (DOM.closeCart) {
+
+        DOM.closeCart.addEventListener(
+            "click",
+            closeCart
+        );
+
+    }
 
 
-  DOM.viewOrderButton.addEventListener("click", () => {
-    if (state.activeOrder) openOrderStatusModal();
-    else showToast("No active order found.");
-  });
+    if (DOM.cartOverlay) {
+
+        DOM.cartOverlay.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    DOM.cartOverlay
+                ) {
+
+                    closeCart();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    if (DOM.continueShopping) {
+
+        DOM.continueShopping.addEventListener(
+            "click",
+            closeCart
+        );
+
+    }
+
+
+    if (DOM.checkoutButton) {
+
+        DOM.checkoutButton.addEventListener(
+            "click",
+            openCheckout
+        );
+
+    }
+
+
+    if (DOM.closeCheckout) {
+
+        DOM.closeCheckout.addEventListener(
+            "click",
+            closeCheckout
+        );
+
+    }
+
+
+    if (DOM.editCart) {
+
+        DOM.editCart.addEventListener(
+            "click",
+            () => {
+
+                closeCheckout();
+
+                openCart();
+
+            }
+        );
+
+    }
+
+
+    if (DOM.orderForm) {
+
+        DOM.orderForm.addEventListener(
+            "submit",
+            submitOrder
+        );
+
+    }
+
+
+    if (DOM.newOrderButton) {
+
+        DOM.newOrderButton.addEventListener(
+            "click",
+            startNewOrder
+        );
+
+    }
+
+
+    if (DOM.infoBtn) {
+
+        DOM.infoBtn.addEventListener(
+            "click",
+            () => {
+
+                showOverlay(
+                    DOM.infoOverlay
+                );
+
+            }
+        );
+
+    }
+
+
+    if (DOM.closeInfo) {
+
+        DOM.closeInfo.addEventListener(
+            "click",
+            () => {
+
+                hideOverlay(
+                    DOM.infoOverlay
+                );
+
+            }
+        );
+
+    }
+
+
+    if (DOM.infoOverlay) {
+
+        DOM.infoOverlay.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    DOM.infoOverlay
+                ) {
+
+                    hideOverlay(
+                        DOM.infoOverlay
+                    );
+
+                }
+
+            }
+        );
+
+    }
 
 }
 
 
 /* =========================================================
-   CHECKOUT + ORDER STATUS
+   CATEGORY HELPERS
 ========================================================= */
 
-function ensureModalStyles_() {
-  if (document.getElementById("locDynamicStyles")) return;
-  const style = document.createElement("style");
-  style.id = "locDynamicStyles";
-  style.textContent = `
-    .loc-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:14px}
-    .loc-modal[hidden]{display:none}.loc-modal-card{width:min(560px,100%);max-height:90vh;overflow:auto;background:#171717;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.5)}
-    .loc-modal-head{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:18px}.loc-modal-head h2{margin:0;font-size:22px}.loc-close{border:0;background:rgba(255,255,255,.08);color:#fff;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer}
-    .loc-field{margin:12px 0}.loc-field label{display:block;font-size:13px;opacity:.72;margin-bottom:7px}.loc-field input,.loc-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.12);background:#0f0f0f;color:#fff;border-radius:13px;padding:13px;font:inherit;outline:none}.loc-field textarea{min-height:90px;resize:vertical}.loc-submit{width:100%;border:0;border-radius:14px;padding:14px;background:#fff;color:#111;font-weight:700;font:inherit;cursor:pointer}.loc-submit:disabled{opacity:.55;cursor:not-allowed}.loc-note{font-size:12px;opacity:.58;line-height:1.5;margin-top:10px}
-    .loc-status{border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,.04)}.loc-status-pill{display:inline-flex;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.09);font-size:12px;font-weight:700}.loc-items{display:grid;gap:9px;margin-top:14px}.loc-item{display:flex;justify-content:space-between;gap:10px;font-size:14px}.loc-total{border-top:1px solid rgba(255,255,255,.1);margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;font-weight:700}
-  `;
-  document.head.appendChild(style);
+function activateAllCategory() {
+
+    if (!DOM.categoryNav) {
+        return;
+    }
+
+
+    const buttons =
+        DOM.categoryNav.querySelectorAll(
+            ".category-btn"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            const category =
+                String(
+                    button.dataset.category ||
+                    ""
+                )
+                .trim()
+                .toLowerCase();
+
+
+            if (
+                category === "all"
+            ) {
+
+                button.classList.add(
+                    "active"
+                );
+
+            } else {
+
+                button.classList.remove(
+                    "active"
+                );
+
+            }
+
+        }
+    );
+
 }
 
-function createModal_(id, title) {
-  ensureModalStyles_();
-  let modal = document.getElementById(id);
-  if (modal) return modal;
-  modal = document.createElement("div");
-  modal.id = id;
-  modal.className = "loc-modal";
-  modal.hidden = true;
-  modal.innerHTML = `<div class="loc-modal-card"><div class="loc-modal-head"><h2>${escapeHtml_(title)}</h2><button class="loc-close" type="button" aria-label="Close">×</button></div><div class="loc-modal-body"></div></div>`;
-  modal.addEventListener("click", e => { if (e.target === modal) closeModal_(modal); });
-  modal.querySelector(".loc-close").addEventListener("click", () => closeModal_(modal));
-  document.body.appendChild(modal);
-  return modal;
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+function clearSearch() {
+
+    if (DOM.searchInput) {
+
+        DOM.searchInput.value =
+            "";
+
+    }
+
+
+    state.search =
+        "";
+
+
+    if (DOM.clearSearch) {
+
+        DOM.clearSearch.hidden =
+            true;
+
+    }
+
+
+    renderMenu();
+
 }
 
-function closeModal_(modal) {
-  if (!modal) return;
-  modal.hidden = true;
-  modal.dataset.open = "false";
-  document.body.style.overflow = "";
+
+/* =========================================================
+   OVERLAY HELPERS
+========================================================= */
+
+function showOverlay(
+    element
+) {
+
+    if (!element) {
+        return;
+    }
+
+
+    element.classList.add(
+        "active"
+    );
+
+
+    element.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
 }
 
-function openCheckoutModal() {
-  if (!state.table?.token) { showToast("Please scan a valid table QR first."); return; }
-  if (getCartItemCount() === 0) { showToast("Your cart is empty."); return; }
 
-  const modal = createModal_("checkoutModal", "Complete Your Order");
-  const body = modal.querySelector(".loc-modal-body");
-  body.innerHTML = `
-    <div class="loc-status"><strong>${escapeHtml_(state.table.tableName || "Table")}</strong><div class="loc-note">Your table is securely identified by the QR code.</div></div>
-    <div class="loc-field"><label for="checkoutName">Your Name</label><input id="checkoutName" maxlength="80" autocomplete="name" placeholder="Enter your name"></div>
-    <div class="loc-field"><label for="checkoutMobile">Mobile Number</label><input id="checkoutMobile" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div>
-    <div class="loc-field"><label for="checkoutRequest">Special Instructions <span style="opacity:.55">(optional)</span></label><textarea id="checkoutRequest" maxlength="300" placeholder="Less spicy, no onions, etc."></textarea></div>
-    <div class="loc-status"><strong>Order Total</strong><div class="loc-total" style="border:0;margin-top:8px;padding-top:0"><span>${getCartItemCount()} items</span><span>${formatCurrency(getCartTotal())}</span></div></div>
-    <button class="loc-submit" id="placeOrderButton" type="button">Place Order</button>
-    <div class="loc-note">Prices and availability are checked again on the server before your order is saved.</div>`;
+function hideOverlay(
+    element
+) {
 
-  modal.querySelector("#checkoutMobile").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0,10); });
-  modal.querySelector("#placeOrderButton").addEventListener("click", submitOrder_);
-  modal.hidden = false; modal.dataset.open = "true"; document.body.style.overflow = "hidden";
+    if (!element) {
+        return;
+    }
+
+
+    element.classList.remove(
+        "active"
+    );
+
+
+    element.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    const anyOpen =
+        document.querySelector(
+            ".modal-overlay.active"
+        );
+
+
+    if (!anyOpen) {
+
+        document.body.classList.remove(
+            "modal-open"
+        );
+
+    }
+
 }
 
-async function submitOrder_() {
-  const nameEl = document.getElementById("checkoutName");
-  const mobileEl = document.getElementById("checkoutMobile");
-  const requestEl = document.getElementById("checkoutRequest");
-  const button = document.getElementById("placeOrderButton");
-  if (!nameEl || !mobileEl || !button) return;
 
-  const customerName = nameEl.value.trim();
-  const mobile = mobileEl.value.trim();
-  const specialRequest = requestEl?.value.trim() || "";
+/* =========================================================
+   PLACE ORDER BUTTON
+========================================================= */
 
-  if (!customerName) { showToast("Enter your name."); nameEl.focus(); return; }
-  if (!/^\d{10}$/.test(mobile)) { showToast("Enter a valid 10-digit mobile number."); mobileEl.focus(); return; }
-  if (!state.table?.token) { showToast("Invalid table QR."); return; }
+function setPlaceOrderLoading(
+    loading
+) {
 
-  const items = getCartItems().map(item => ({ id:item.id, quantity:item.quantity }));
-  button.disabled = true; button.textContent = "Placing Order…";
+    if (!DOM.placeOrderButton) {
+        return;
+    }
 
-  try {
-    const response = await apiPost_({
-      action: "createOrder",
-      tableToken: state.table.token,
-      customerName,
-      mobile,
-      specialRequest,
-      items
-    });
 
-    if (!response.success) throw new Error(response.error || "Order could not be placed.");
+    DOM.placeOrderButton.disabled =
+        loading;
 
-    const order = {
-      ...response,
-      customerKey: response.customerKey,
-      savedAt: Date.now()
-    };
-    state.activeOrder = order;
-    saveActiveOrder(order);
-    state.cart.clear();
-    renderMenu(); renderCart(); updateCartUI(); closeCart();
-    closeModal_(document.getElementById("checkoutModal"));
-    showActiveOrder(order);
-    openOrderStatusModal();
-    startOrderPolling_();
-    showToast("Order placed successfully.");
-  } catch (error) {
-    console.error(error);
-    showToast(error.message || "Unable to place order.");
-    button.disabled = false; button.textContent = "Place Order";
-  }
+
+    if (loading) {
+
+        DOM.placeOrderButton.dataset
+            .originalText =
+            DOM.placeOrderButton.innerHTML;
+
+
+        DOM.placeOrderButton.innerHTML =
+            `
+            <span>Placing Order...</span>
+            <span>⏳</span>
+            `;
+
+    } else {
+
+        DOM.placeOrderButton.innerHTML =
+            DOM.placeOrderButton.dataset
+                .originalText ||
+            `
+            <span>Confirm Order</span>
+            <span>→</span>
+            `;
+
+    }
+
 }
 
-function openOrderStatusModal() {
-  if (!state.activeOrder) return;
-  const modal = createModal_("orderStatusModal", "Your Order");
-  renderOrderStatus_(state.activeOrder);
-  modal.hidden = false; modal.dataset.open = "true"; document.body.style.overflow = "hidden";
-  startOrderPolling_();
+
+/* =========================================================
+   TABLE REQUIRED STATE
+========================================================= */
+
+function showTableRequired() {
+
+    if (DOM.menuContainer) {
+
+        DOM.menuContainer.innerHTML =
+            `
+            <div class="empty-state"
+                 style="display:block">
+
+                <div class="empty-icon">
+                    📱
+                </div>
+
+                <h3>
+                    Table QR Required
+                </h3>
+
+                <p>
+                    Please scan the QR code
+                    placed on your table.
+                </p>
+
+            </div>
+            `;
+
+    }
+
+
+    if (DOM.itemCount) {
+
+        DOM.itemCount.textContent =
+            "QR required";
+
+    }
+
 }
 
-function renderOrderStatus_(order) {
-  const modal = document.getElementById("orderStatusModal");
-  if (!modal) return;
-  const body = modal.querySelector(".loc-modal-body");
-  const items = Array.isArray(order.items) ? order.items : [];
-  body.innerHTML = `
-    <div class="loc-status"><div class="loc-status-pill">${escapeHtml_(getFriendlyStatus_(order.status))}</div><div style="margin-top:10px;font-weight:700">Order #${escapeHtml_(order.orderId)}</div><div class="loc-note">${escapeHtml_(order.table || state.table?.tableName || "")}</div></div>
-    <div class="loc-items">${items.map(item => `<div class="loc-item"><span>${escapeHtml_(item.name)} × ${Number(item.quantity || 0)}</span><strong>${formatCurrency(item.lineTotal)}</strong></div>`).join("")}</div>
-    <div class="loc-total"><span>Subtotal</span><span>${formatCurrency(order.subtotal)}</span></div>
-    ${Number(order.discountAmount || 0) ? `<div class="loc-item" style="margin-top:10px"><span>Discount</span><strong>−${formatCurrency(order.discountAmount)}</strong></div>` : ""}
-    <div class="loc-total"><span>Total</span><span>${formatCurrency(order.finalTotal)}</span></div>
-    ${order.specialRequest ? `<div class="loc-note"><strong>Special request:</strong> ${escapeHtml_(order.specialRequest)}</div>` : ""}`;
+
+/* =========================================================
+   FATAL ERROR
+========================================================= */
+
+function showFatalError(
+    message
+) {
+
+    if (!DOM.menuContainer) {
+        return;
+    }
+
+
+    DOM.menuContainer.innerHTML =
+        `
+        <div class="empty-state"
+             style="display:block">
+
+            <div class="empty-icon">
+                ⚠️
+            </div>
+
+            <h3>
+                Unable to load menu
+            </h3>
+
+            <p>
+                ${escapeHtml(
+                    message
+                )}
+            </p>
+
+            <button
+                type="button"
+                class="reset-btn"
+                onclick="location.reload()">
+
+                Try Again
+
+            </button>
+
+        </div>
+        `;
+
 }
+
+
+/* =========================================================
+   LOADER
+========================================================= */
+
+function hideLoader() {
+
+    if (!DOM.pageLoader) {
+        return;
+    }
+
+
+    DOM.pageLoader.classList.add(
+        "hidden"
+    );
+
+
+    setTimeout(
+        () => {
+
+            DOM.pageLoader.style.display =
+                "none";
+
+        },
+        350
+    );
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(
+    message,
+    type = "success"
+) {
+
+    if (!DOM.toast) {
+        return;
+    }
+
+
+    if (DOM.toastMessage) {
+
+        DOM.toastMessage.textContent =
+            message;
+
+    } else {
+
+        DOM.toast.textContent =
+            message;
+
+    }
+
+
+    if (DOM.toastIcon) {
+
+        DOM.toastIcon.textContent =
+            type === "error"
+                ? "!"
+                : "✓";
+
+    }
+
+
+    DOM.toast.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        showToast.timer
+    );
+
+
+    showToast.timer =
+        setTimeout(
+            () => {
+
+                DOM.toast.classList.remove(
+                    "show"
+                );
+
+            },
+            2600
+        );
+
+}
+
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
 function formatCurrency(
-  amount
+    amount
 ) {
 
-  return (
-    APP_CONFIG.currency +
-    Number(amount || 0)
-      .toLocaleString(
-        "en-IN",
-        {
-          maximumFractionDigits: 2
-        }
-      )
-  );
-
-}
-
-
-function showToast(
-  message
-) {
-
-  DOM.toast.textContent =
-    message;
-
-  DOM.toast.classList.add(
-    "show"
-  );
-
-  clearTimeout(
-    showToast.timer
-  );
-
-  showToast.timer =
-    setTimeout(
-      () => {
-
-        DOM.toast.classList.remove(
-          "show"
+    const value =
+        Number(
+            amount || 0
         );
 
-      },
-      2200
+
+    return (
+        APP_CONFIG.currency +
+        value.toLocaleString(
+            "en-IN",
+            {
+                maximumFractionDigits:
+                    2
+            }
+        )
     );
 
 }
+
+
+function roundMoney(
+    value
+) {
+
+    const number =
+        Number(
+            value
+        );
+
+
+    if (
+        !Number.isFinite(
+            number
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    return (
+        Math.round(
+            number * 100
+        ) / 100
+    );
+
+}
+
+
+function generateLocalKey() {
+
+    if (
+        window.crypto &&
+        crypto.randomUUID
+    ) {
+
+        return crypto.randomUUID();
+
+    }
+
+
+    return (
+        "CK-" +
+        Date.now().toString(36) +
+        "-" +
+        Math.random()
+            .toString(36)
+            .slice(2, 12)
+    );
+
+}
+
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   END
+========================================================= */
