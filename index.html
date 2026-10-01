@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+
+  <meta
+    name="theme-color"
+    content="#111111"
+  />
+
+  <meta
+    name="description"
+    content="Digital menu and ordering experience"
+  />
+
+  <title>Love Over Coffee | Digital Menu</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  />
+</head>
+
+<body>
+
+  <!-- =========================
+       APP
+  ========================== -->
+
+  <div id="app">
+
+    <!-- =========================
+         HERO
+    ========================== -->
+
+    <header class="hero">
+
+      <div class="hero-overlay"></div>
+
+      <div class="hero-content">
+
+        <div class="brand-logo-wrap">
+          <img
+            id="cafeLogo"
+            class="cafe-logo"
+            src=""
+            alt="Cafe logo"
+            hidden
+          />
+
+          <div
+            id="logoFallback"
+            class="logo-fallback"
+          >
+            LOC
+          </div>
+        </div>
+
+        <p
+          id="cafeNameSmall"
+          class="hero-small-title"
+        >
+          LOVE OVER COFFEE
+        </p>
+
+        <h1 id="cafeName">
+          Love Over Coffee
+        </h1>
+
+        <p
+          id="cafeTagline"
+          class="hero-tagline"
+        >
+          Good food. Good coffee. Good moments.
+        </p>
+
+        <div class="table-badge">
+          <span class="table-icon">⌂</span>
+
+          <span>
+            Table
+            <strong id="tableNumber">
+              —
+            </strong>
+          </span>
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main class="main-content">
+
+      <!-- SEARCH -->
+
+      <section class="search-section">
+
+        <div class="search-box">
+
+          <span class="search-icon">
+            ⌕
+          </span>
+
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Search menu..."
+            autocomplete="off"
+          />
+
+          <button
+            id="clearSearch"
+            class="clear-search"
+            type="button"
+            aria-label="Clear search"
+            hidden
+          >
+            ×
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- CATEGORY NAVIGATION -->
+
+      <section class="category-section">
+
+        <div
+          id="categoryList"
+          class="category-list"
+        ></div>
+
+      </section>
+
+
+      <!-- ACTIVE ORDER -->
+
+      <section
+        id="activeOrderBanner"
+        class="active-order-banner"
+        hidden
+      >
+
+        <div class="active-order-left">
+
+          <div class="active-order-icon">
+            ✓
+          </div>
+
+          <div>
+
+            <span class="active-order-label">
+              Your Order
+            </span>
+
+            <strong id="activeOrderText">
+              Order #—
+            </strong>
+
+          </div>
+
+        </div>
+
+        <button
+          id="viewOrderButton"
+          class="active-order-button"
+          type="button"
+        >
+          View Status
+        </button>
+
+      </section>
+
+
+      <!-- MENU -->
+
+      <section class="menu-section">
+
+        <div
+          id="menuContainer"
+          class="menu-container"
+        ></div>
+
+        <div
+          id="emptyMenu"
+          class="empty-state"
+          hidden
+        >
+          <div class="empty-icon">
+            ☕
+          </div>
+
+          <h3>
+            Nothing found
+          </h3>
+
+          <p>
+            Try another search or category.
+          </p>
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- =========================
+         CART BAR
+    ========================== -->
+
+    <div
+      id="cartBar"
+      class="cart-bar"
+      hidden
+    >
+
+      <div class="cart-summary">
+
+        <span
+          id="cartItemCount"
+          class="cart-item-count"
+        >
+          0 items
+        </span>
+
+        <strong
+          id="cartTotal"
+          class="cart-total"
+        >
+          ₹0
+        </strong>
+
+      </div>
+
+      <button
+        id="viewCartButton"
+        class="view-cart-button"
+        type="button"
+      >
+        View Cart
+        <span>→</span>
+      </button>
+
+    </div>
+
+
+    <!-- =========================
+         CART DRAWER
+    ========================== -->
+
+    <div
+      id="cartOverlay"
+      class="cart-overlay"
+      hidden
+    ></div>
+
+    <aside
+      id="cartDrawer"
+      class="cart-drawer"
+      aria-hidden="true"
+    >
+
+      <div class="drawer-header">
+
+        <div>
+
+          <span class="drawer-eyebrow">
+            YOUR ORDER
+          </span>
+
+          <h2>
+            Cart
+          </h2>
+
+        </div>
+
+        <button
+          id="closeCart"
+          class="icon-button"
+          type="button"
+          aria-label="Close cart"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div
+        id="cartItems"
+        class="cart-items"
+      ></div>
+
+
+      <div
+        id="cartEmpty"
+        class="cart-empty"
+      >
+
+        <div class="cart-empty-icon">
+          🛒
+        </div>
+
+        <h3>
+          Your cart is empty
+        </h3>
+
+        <p>
+          Add something delicious from the menu.
+        </p>
+
+      </div>
+
+
+      <div class="cart-footer">
+
+        <div class="cart-total-row">
+
+          <span>
+            Total
+          </span>
+
+          <strong id="drawerTotal">
+            ₹0
+          </strong>
+
+        </div>
+
+        <button
+          id="checkoutButton"
+          class="checkout-button"
+          type="button"
+        >
+          Continue
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- =========================
+         TOAST
+    ========================== -->
+
+    <div
+      id="toast"
+      class="toast"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+  </div>
+
+
+  <script src="script.js"></script>
+
+</body>
+</html>
