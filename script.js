@@ -2686,7 +2686,7 @@ function getCustomerStatusLabel(
 
     if (
         normalized ===
-        "PREPARING"
+        "Preparing"
     ) {
 
         return "Preparing";
@@ -2696,7 +2696,7 @@ function getCustomerStatusLabel(
 
     if (
         normalized ===
-        "COMPLETED"
+        "Completed"
     ) {
 
         return "Completed";
@@ -2706,7 +2706,7 @@ function getCustomerStatusLabel(
 
     if (
         normalized ===
-        "CANCELLED"
+        "Cancelled"
     ) {
 
         return "Cancelled";
@@ -2731,7 +2731,7 @@ function getCustomerStatusMessage(
 
     if (
         normalized ===
-        "PREPARING"
+        "Preparing"
     ) {
 
         return "Your order is being prepared.";
@@ -2741,7 +2741,7 @@ function getCustomerStatusMessage(
 
     if (
         normalized ===
-        "COMPLETED"
+        "Completed"
     ) {
 
         return "Your order has been completed. Enjoy your meal!";
@@ -2751,7 +2751,7 @@ function getCustomerStatusMessage(
 
     if (
         normalized ===
-        "CANCELLED"
+        "Cancelled"
     ) {
 
         return "This order has been cancelled.";
@@ -3223,118 +3223,48 @@ function renderOrderStatus(
    ORDER STATUS STEPS
 ========================================================= */
 
-function updateOrderStatusSteps(
-    status
-) {
+function updateOrderStatusSteps(status) {
 
-    const normalized =
-        normalizeOrderStatus(
-            status
-        );
-
+    const normalized = String(status || "")
+        .trim()
+        .toLowerCase();
 
     const receivedStep =
-        document.querySelector(
-            '[data-step="received"]'
-        );
-
+        document.querySelector('[data-step="received"]');
 
     const preparingStep =
-        document.querySelector(
-            '[data-step="preparing"]'
-        );
-
+        document.querySelector('[data-step="preparing"]');
 
     const completedStep =
-        document.querySelector(
-            '[data-step="completed"]'
-        );
+        document.querySelector('[data-step="completed"]');
 
+    [receivedStep, preparingStep, completedStep]
+        .filter(Boolean)
+        .forEach(step => {
+            step.classList.remove("active", "completed");
+        });
 
-    [
-        receivedStep,
-        preparingStep,
-        completedStep
-    ]
-    .filter(Boolean)
-    .forEach(
-        step => {
-
-            step.classList.remove(
-                "active",
-                "completed"
-            );
-
-        }
-    );
-
-
-    if (
-        normalized ===
-        "NEW"
-    ) {
-
-        receivedStep?.classList.add(
-            "active"
-        );
-
+    if (normalized === "new") {
+        receivedStep?.classList.add("active");
         return;
-
     }
 
-
-    if (
-        normalized ===
-        "PREPARING"
-    ) {
-
-        receivedStep?.classList.add(
-            "completed"
-        );
-
-        preparingStep?.classList.add(
-            "active"
-        );
-
+    if (normalized === "preparing") {
+        receivedStep?.classList.add("completed");
+        preparingStep?.classList.add("active", "completed");
         return;
-
     }
 
-
-    if (
-        normalized ===
-        "COMPLETED"
-    ) {
-
-        receivedStep?.classList.add(
-            "completed"
-        );
-
-        preparingStep?.classList.add(
-            "completed"
-        );
-
-        completedStep?.classList.add(
-            "active",
-            "completed"
-        );
-
+    if (normalized === "completed") {
+        receivedStep?.classList.add("completed");
+        preparingStep?.classList.add("completed");
+        completedStep?.classList.add("active", "completed");
         return;
-
     }
 
-
-    if (
-        normalized ===
-        "CANCELLED"
-    ) {
-
-        receivedStep?.classList.add(
-            "completed"
-        );
-
+    if (normalized === "cancelled") {
+        receivedStep?.classList.add("completed");
     }
-
 }
 
 
