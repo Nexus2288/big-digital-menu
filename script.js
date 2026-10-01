@@ -27,7 +27,7 @@ const APP_CONFIG = {
   // Google Apps Script Web App URL.
   // Example: https://script.google.com/macros/s/XXXXX/exec
   apiUrl:
-    "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE",
+    "https://script.google.com/macros/s/AKfycbxNNb9AkA552XWf2t_Me3sbwNrr_JfpKPZ8QUOyk3pbMJ3dopFF4LUsGC7oToymbtcb/exec",
 
   defaultTable:
     null
