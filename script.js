@@ -1,7 +1,16 @@
 /* =========================================================
    LOVE OVER COFFEE
    CUSTOMER MENU - PART 3
-   SECURE TABLE + LIVE SHEET MENU + ORDER CREATION
+
+   SECURE TABLE TOKEN
+   LIVE GOOGLE SHEET MENU
+   CART
+   ORDER CREATION
+   CUSTOMER KEY
+   2-HOUR ACTIVE ORDER RECOVERY
+
+   NOTE:
+   Existing style.css ke classes ko preserve kiya gaya hai.
 ========================================================= */
 
 
@@ -11,7 +20,8 @@
 
 const APP_CONFIG = {
 
-    cafeName: "Love Over Coffee",
+    cafeName:
+        "Love Over Coffee",
 
     tagline:
         "Good food. Good coffee. Good moments.",
@@ -45,21 +55,29 @@ const state = {
 
     menu: [],
 
-    activeCategory: "all",
+    activeCategory:
+        "all",
 
-    search: "",
+    search:
+        "",
 
-    cart: new Map(),
+    cart:
+        new Map(),
 
-    table: null,
+    table:
+        null,
 
-    tableToken: null,
+    tableToken:
+        null,
 
-    activeOrder: null,
+    activeOrder:
+        null,
 
-    isLoading: false,
+    isLoading:
+        false,
 
-    isSubmitting: false
+    isSubmitting:
+        false
 
 };
 
@@ -231,6 +249,7 @@ async function init() {
         state.tableToken =
             getTableTokenFromUrl();
 
+
         if (!state.tableToken) {
 
             showTableRequired();
@@ -241,17 +260,21 @@ async function init() {
 
         }
 
+
         await validateTable();
 
         await loadMenu();
 
         loadActiveOrder();
 
+        renderCategories();
+
         renderMenu();
 
         updateCartUI();
 
         hideLoader();
+
 
     } catch (error) {
 
@@ -285,12 +308,14 @@ function applyBranding() {
 
     }
 
+
     if (DOM.cafeSubtitle) {
 
         DOM.cafeSubtitle.textContent =
             APP_CONFIG.tagline;
 
     }
+
 
     if (
         DOM.cafeLogo &&
@@ -306,9 +331,7 @@ function applyBranding() {
 
 
 /* =========================================================
-   TABLE FIELD
-   Customer can see table number,
-   but cannot edit it.
+   TABLE
 ========================================================= */
 
 function prepareTableField() {
@@ -317,27 +340,28 @@ function prepareTableField() {
         return;
     }
 
-    DOM.tableNumber.readOnly = true;
+
+    DOM.tableNumber.readOnly =
+        true;
+
 
     DOM.tableNumber.setAttribute(
         "readonly",
         "readonly"
     );
 
+
     DOM.tableNumber.setAttribute(
         "aria-readonly",
         "true"
     );
+
 
     DOM.tableNumber.placeholder =
         "Table will be detected automatically";
 
 }
 
-
-/* =========================================================
-   SECURE TABLE TOKEN
-========================================================= */
 
 function getTableTokenFromUrl() {
 
@@ -346,30 +370,17 @@ function getTableTokenFromUrl() {
             window.location.search
         );
 
+
     const token =
         String(
             params.get("t") || ""
         ).trim();
 
-    if (!token) {
-        return null;
-    }
 
-    /*
-     * We do not expose or trust
-     * table number from URL.
-     *
-     * Only secure token is accepted.
-     */
-
-    return token;
+    return token || null;
 
 }
 
-
-/* =========================================================
-   VALIDATE TABLE
-========================================================= */
 
 async function validateTable() {
 
@@ -381,6 +392,7 @@ async function validateTable() {
                     state.tableToken
             }
         );
+
 
     if (
         !response ||
@@ -394,6 +406,7 @@ async function validateTable() {
         );
 
     }
+
 
     state.table = {
 
@@ -425,7 +438,9 @@ async function validateTable() {
 
 async function loadMenu() {
 
-    state.isLoading = true;
+    state.isLoading =
+        true;
+
 
     try {
 
@@ -433,6 +448,7 @@ async function loadMenu() {
             await apiGet(
                 "getMenu"
             );
+
 
         if (
             !response ||
@@ -446,23 +462,22 @@ async function loadMenu() {
 
         }
 
+
         state.menu =
             normalizeMenu(
                 response.items || []
             );
 
+
     } finally {
 
-        state.isLoading = false;
+        state.isLoading =
+            false;
 
     }
 
 }
 
-
-/* =========================================================
-   MENU NORMALIZATION
-========================================================= */
 
 function normalizeMenu(items) {
 
@@ -475,10 +490,12 @@ function normalizeMenu(items) {
                         item.id ?? ""
                     ).trim();
 
+
                 const name =
                     String(
                         item.name ?? ""
                     ).trim();
+
 
                 const category =
                     String(
@@ -486,18 +503,22 @@ function normalizeMenu(items) {
                         "Other"
                     ).trim();
 
+
                 const price =
                     Number(
                         item.price
                     );
 
+
                 const available =
                     item.available !== false;
+
 
                 const tag =
                     String(
                         item.tag ?? ""
                     ).trim();
+
 
                 const type =
                     String(
@@ -505,6 +526,7 @@ function normalizeMenu(items) {
                     )
                     .trim()
                     .toLowerCase();
+
 
                 return {
 
@@ -541,57 +563,136 @@ function normalizeMenu(items) {
 
 
 /* =========================================================
-   CATEGORY NAVIGATION
-   Uses existing category buttons
-   already present in index.html.
+   CATEGORIES
+   Existing CSS:
+   .category-list
+   .category-button
 ========================================================= */
 
-function setupCategories() {
+function renderCategories() {
 
     if (!DOM.categoryNav) {
         return;
     }
 
-    const buttons =
-        DOM.categoryNav.querySelectorAll(
-            ".category-btn"
+
+    const categoryList =
+        DOM.categoryNav.classList.contains(
+            "category-list"
+        )
+            ? DOM.categoryNav
+            : DOM.categoryNav.querySelector(
+                ".category-list"
+            ) ||
+            DOM.categoryNav;
+
+
+    categoryList.innerHTML =
+        "";
+
+
+    const uniqueCategories =
+        Array.from(
+            new Set(
+                state.menu
+                    .map(
+                        item =>
+                            item.category
+                    )
+                    .filter(Boolean)
+            )
         );
 
-    buttons.forEach(
-        button => {
+
+    const categories = [
+        "all",
+        ...uniqueCategories
+    ];
+
+
+    categories.forEach(
+        category => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.type =
+                "button";
+
+
+            button.className =
+                "category-button";
+
+
+            button.dataset.category =
+                normalizeCategory(
+                    category
+                );
+
+
+            button.textContent =
+                category === "all"
+                    ? "All"
+                    : category;
+
+
+            if (
+                normalizeCategory(
+                    state.activeCategory
+                ) ===
+                normalizeCategory(
+                    category
+                )
+            ) {
+
+                button.classList.add(
+                    "active"
+                );
+
+            }
+
 
             button.addEventListener(
                 "click",
                 () => {
 
-                    const category =
-                        String(
-                            button.dataset.category ||
-                            "all"
-                        )
-                        .trim()
-                        .toLowerCase();
-
                     state.activeCategory =
-                        category;
+                        normalizeCategory(
+                            category
+                        );
 
-                    buttons.forEach(
-                        item => {
 
-                            item.classList.remove(
-                                "active"
-                            );
+                    categoryList
+                        .querySelectorAll(
+                            ".category-button"
+                        )
+                        .forEach(
+                            item => {
 
-                        }
-                    );
+                                item.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
 
                     button.classList.add(
                         "active"
                     );
 
+
                     renderMenu();
 
                 }
+            );
+
+
+            categoryList.appendChild(
+                button
             );
 
         }
@@ -600,8 +701,29 @@ function setupCategories() {
 }
 
 
+function normalizeCategory(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(
+            /[^a-z0-9]+/g,
+            "-"
+        )
+        .replace(
+            /^-+|-+$/g,
+            ""
+        );
+
+}
+
+
 /* =========================================================
-   FILTER MENU
+   FILTER
 ========================================================= */
 
 function getFilteredMenu() {
@@ -611,35 +733,26 @@ function getFilteredMenu() {
             .trim()
             .toLowerCase();
 
+
     const category =
-        state.activeCategory
-            .trim()
-            .toLowerCase();
+        normalizeCategory(
+            state.activeCategory
+        );
 
 
     return state.menu.filter(
         item => {
 
             const itemCategory =
-                item.category
-                    .trim()
-                    .toLowerCase()
-                    .replace(
-                        /[^a-z0-9]+/g,
-                        "-"
-                    )
-                    .replace(
-                        /^-|-$|/g,
-                        ""
-                    );
+                normalizeCategory(
+                    item.category
+                );
+
 
             const categoryMatch =
                 category === "all" ||
-                itemCategory === category ||
-                item.category
-                    .trim()
-                    .toLowerCase() ===
-                    category;
+                itemCategory ===
+                category;
 
 
             const searchableText =
@@ -671,7 +784,8 @@ function getFilteredMenu() {
 
 
 /* =========================================================
-   RENDER MENU
+   MENU RENDER
+   Existing CSS classes preserved.
 ========================================================= */
 
 function renderMenu() {
@@ -680,8 +794,10 @@ function renderMenu() {
         return;
     }
 
+
     const items =
         getFilteredMenu();
+
 
     DOM.menuContainer.innerHTML =
         "";
@@ -713,7 +829,9 @@ function renderMenu() {
         item => {
 
             DOM.menuContainer.appendChild(
-                createMenuCard(item)
+                createMenuCard(
+                    item
+                )
             );
 
         }
@@ -724,14 +842,27 @@ function renderMenu() {
 
 /* =========================================================
    MENU CARD
+   Existing CSS structure:
+
+   .menu-card
+     .menu-card-top
+       .menu-card-content
+         .menu-card-name
+         .menu-card-tag
+         .menu-card-category
+         .menu-card-price
+       .menu-card-right
 ========================================================= */
 
-function createMenuCard(item) {
+function createMenuCard(
+    item
+) {
 
     const card =
         document.createElement(
             "article"
         );
+
 
     card.className =
         "menu-card";
@@ -746,10 +877,21 @@ function createMenuCard(item) {
     }
 
 
+    const top =
+        document.createElement(
+            "div"
+        );
+
+
+    top.className =
+        "menu-card-top";
+
+
     const content =
         document.createElement(
             "div"
         );
+
 
     content.className =
         "menu-card-content";
@@ -757,8 +899,13 @@ function createMenuCard(item) {
 
     const name =
         document.createElement(
-            "h3"
+            "div"
         );
+
+
+    name.className =
+        "menu-card-name";
+
 
     name.textContent =
         item.name;
@@ -766,11 +913,13 @@ function createMenuCard(item) {
 
     const tag =
         document.createElement(
-            "p"
+            "div"
         );
+
 
     tag.className =
         "menu-card-tag";
+
 
     tag.textContent =
         item.tag || "";
@@ -784,19 +933,15 @@ function createMenuCard(item) {
     }
 
 
-    const meta =
+    const category =
         document.createElement(
             "div"
         );
 
-    meta.className =
-        "menu-card-meta";
 
+    category.className =
+        "menu-card-category";
 
-    const category =
-        document.createElement(
-            "span"
-        );
 
     category.textContent =
         item.category;
@@ -804,8 +949,13 @@ function createMenuCard(item) {
 
     const price =
         document.createElement(
-            "strong"
+            "div"
         );
+
+
+    price.className =
+        "menu-card-price";
+
 
     price.textContent =
         formatCurrency(
@@ -813,25 +963,23 @@ function createMenuCard(item) {
         );
 
 
-    meta.appendChild(
-        category
-    );
-
-    meta.appendChild(
-        price
-    );
-
-
     content.appendChild(
         name
     );
+
 
     content.appendChild(
         tag
     );
 
+
     content.appendChild(
-        meta
+        category
+    );
+
+
+    content.appendChild(
+        price
     );
 
 
@@ -839,6 +987,7 @@ function createMenuCard(item) {
         document.createElement(
             "div"
         );
+
 
     right.className =
         "menu-card-right";
@@ -857,17 +1006,23 @@ function createMenuCard(item) {
                 "span"
             );
 
+
         stock.className =
             "out-of-stock";
 
+
         stock.textContent =
             "Out of Stock";
+
 
         right.appendChild(
             stock
         );
 
-    } else if (
+    }
+
+
+    else if (
         quantity > 0
     ) {
 
@@ -878,21 +1033,28 @@ function createMenuCard(item) {
             )
         );
 
-    } else {
+    }
+
+
+    else {
 
         const add =
             document.createElement(
                 "button"
             );
 
+
         add.type =
             "button";
+
 
         add.className =
             "add-button";
 
+
         add.textContent =
             "Add";
+
 
         add.addEventListener(
             "click",
@@ -905,6 +1067,7 @@ function createMenuCard(item) {
             }
         );
 
+
         right.appendChild(
             add
         );
@@ -912,17 +1075,25 @@ function createMenuCard(item) {
     }
 
 
-    card.appendChild(
+    top.appendChild(
         content
     );
 
-    card.appendChild(
+
+    top.appendChild(
         right
     );
 
 
+    card.appendChild(
+        top
+    );
+
+
     /*
-     * Veg / Non-Veg indicator.
+     * Keep existing food-type behavior.
+     * CSS may or may not define this class;
+     * it does not affect existing layout.
      */
 
     if (
@@ -935,13 +1106,16 @@ function createMenuCard(item) {
                 "span"
             );
 
+
         typeBadge.className =
             `food-type ${item.type}`;
+
 
         typeBadge.textContent =
             item.type === "veg"
                 ? "VEG"
                 : "NON-VEG";
+
 
         card.appendChild(
             typeBadge
@@ -969,6 +1143,7 @@ function createQuantityControl(
             "div"
         );
 
+
     wrapper.className =
         "quantity-control";
 
@@ -978,11 +1153,14 @@ function createQuantityControl(
             "button"
         );
 
+
     minus.type =
         "button";
 
+
     minus.className =
         "quantity-button";
+
 
     minus.textContent =
         "−";
@@ -1006,8 +1184,10 @@ function createQuantityControl(
             "span"
         );
 
+
     number.className =
         "quantity-number";
+
 
     number.textContent =
         quantity;
@@ -1018,11 +1198,14 @@ function createQuantityControl(
             "button"
         );
 
+
     plus.type =
         "button";
 
+
     plus.className =
         "quantity-button";
+
 
     plus.textContent =
         "+";
@@ -1045,9 +1228,11 @@ function createQuantityControl(
         minus
     );
 
+
     wrapper.appendChild(
         number
     );
+
 
     wrapper.appendChild(
         plus
@@ -1063,7 +1248,9 @@ function createQuantityControl(
    CART
 ========================================================= */
 
-function addToCart(item) {
+function addToCart(
+    item
+) {
 
     if (!item.available) {
 
@@ -1107,6 +1294,7 @@ function addToCart(item) {
 
     updateCartUI();
 
+
     showToast(
         `${item.name} added to cart`
     );
@@ -1135,7 +1323,10 @@ function changeQuantity(
             itemId
         );
 
-    } else if (
+    }
+
+
+    else if (
         next <= 50
     ) {
 
@@ -1273,6 +1464,7 @@ function updateCartUI() {
     const count =
         getCartItemCount();
 
+
     const total =
         getCartTotal();
 
@@ -1328,7 +1520,8 @@ function updateCartUI() {
 
 
 /* =========================================================
-   RENDER CART
+   CART RENDER
+   Existing CSS classes preserved.
 ========================================================= */
 
 function renderCart() {
@@ -1364,6 +1557,7 @@ function renderCart() {
                     "div"
                 );
 
+
             row.className =
                 "cart-item";
 
@@ -1373,14 +1567,20 @@ function renderCart() {
                     "div"
                 );
 
+
             info.className =
                 "cart-item-info";
 
 
             const name =
                 document.createElement(
-                    "strong"
+                    "div"
                 );
+
+
+            name.className =
+                "cart-item-name";
+
 
             name.textContent =
                 item.name;
@@ -1388,8 +1588,13 @@ function renderCart() {
 
             const price =
                 document.createElement(
-                    "span"
+                    "div"
                 );
+
+
+            price.className =
+                "cart-item-price";
+
 
             price.textContent =
                 `${formatCurrency(
@@ -1401,21 +1606,34 @@ function renderCart() {
                 name
             );
 
+
             info.appendChild(
                 price
             );
 
 
             const controls =
+                document.createElement(
+                    "div"
+                );
+
+
+            controls.className =
+                "cart-item-controls";
+
+
+            controls.appendChild(
                 createQuantityControl(
                     item.id,
                     item.quantity
-                );
+                )
+            );
 
 
             row.appendChild(
                 info
             );
+
 
             row.appendChild(
                 controls
@@ -1462,6 +1680,7 @@ function renderCheckout() {
                     "div"
                 );
 
+
             row.className =
                 "checkout-item";
 
@@ -1470,6 +1689,7 @@ function renderCheckout() {
                 document.createElement(
                     "span"
                 );
+
 
             name.textContent =
                 `${item.name} × ${item.quantity}`;
@@ -1480,6 +1700,7 @@ function renderCheckout() {
                     "strong"
                 );
 
+
             price.textContent =
                 formatCurrency(
                     item.lineTotal
@@ -1489,6 +1710,7 @@ function renderCheckout() {
             row.appendChild(
                 name
             );
+
 
             row.appendChild(
                 price
@@ -1516,7 +1738,7 @@ function renderCheckout() {
 
 
 /* =========================================================
-   CART MODAL
+   OPEN / CLOSE CART
 ========================================================= */
 
 function openCart() {
@@ -1557,9 +1779,11 @@ function openCheckout() {
 
     renderCheckout();
 
+
     hideOverlay(
         DOM.cartOverlay
     );
+
 
     showOverlay(
         DOM.checkoutOverlay
@@ -1661,10 +1885,6 @@ async function submitOrder(
     }
 
 
-    /*
-     * Current backend requires mobile.
-     */
-
     if (!mobile) {
 
         showToast(
@@ -1715,12 +1935,6 @@ async function submitOrder(
 
     try {
 
-        /*
-         * Customer key:
-         * generated locally once,
-         * then sent with order.
-         */
-
         let customerKey =
             localStorage.getItem(
                 "cafe_customer_key"
@@ -1732,6 +1946,7 @@ async function submitOrder(
             customerKey =
                 generateLocalKey();
 
+
             localStorage.setItem(
                 "cafe_customer_key",
                 customerKey
@@ -1739,14 +1954,6 @@ async function submitOrder(
 
         }
 
-
-        /*
-         * IMPORTANT:
-         * Backend currently expects
-         * action + order fields directly.
-         *
-         * Do NOT wrap this in { data: ... }.
-         */
 
         const response =
             await apiPost({
@@ -1798,48 +2005,51 @@ async function submitOrder(
         }
 
 
-        const order =
-            {
+        const order = {
 
-                orderId:
-                    response.orderId,
+            orderId:
+                response.orderId,
 
-                customerKey:
-                    response.customerKey ||
-                    customerKey,
+            customerKey:
+                response.customerKey ||
+                customerKey,
 
-                table:
-                    response.table,
+            table:
+                response.table,
 
-                status:
-                    response.status,
+            status:
+                response.status,
 
-                items:
-                    response.items || items,
+            items:
+                response.items ||
+                items,
 
-                subtotal:
-                    response.subtotal,
+            subtotal:
+                response.subtotal,
 
-                couponCode:
-                    response.couponCode || "",
+            couponCode:
+                response.couponCode ||
+                "",
 
-                discountPercent:
-                    response.discountPercent || 0,
+            discountPercent:
+                response.discountPercent ||
+                0,
 
-                discountAmount:
-                    response.discountAmount || 0,
+            discountAmount:
+                response.discountAmount ||
+                0,
 
-                finalTotal:
-                    response.finalTotal,
+            finalTotal:
+                response.finalTotal,
 
-                createdAt:
-                    response.createdAt ||
-                    new Date().toISOString(),
+            createdAt:
+                response.createdAt ||
+                new Date().toISOString(),
 
-                savedAt:
-                    Date.now()
+            savedAt:
+                Date.now()
 
-            };
+        };
 
 
         state.activeOrder =
@@ -1850,10 +2060,6 @@ async function submitOrder(
             order
         );
 
-
-        /*
-         * Show success.
-         */
 
         if (DOM.successOrderId) {
 
@@ -1877,17 +2083,14 @@ async function submitOrder(
             DOM.checkoutOverlay
         );
 
+
         showOverlay(
             DOM.successOverlay
         );
 
 
-        /*
-         * New order starts with
-         * an empty cart.
-         */
-
         state.cart.clear();
+
 
         renderMenu();
 
@@ -1906,6 +2109,7 @@ async function submitOrder(
             error
         );
 
+
         showToast(
             error.message ||
             "Unable to place order.",
@@ -1916,6 +2120,7 @@ async function submitOrder(
 
         state.isSubmitting =
             false;
+
 
         setPlaceOrderLoading(
             false
@@ -1938,12 +2143,6 @@ function startNewOrder() {
         null;
 
 
-    /*
-     * Do not delete customer key.
-     * Same browser/customer can
-     * continue using the system.
-     */
-
     renderMenu();
 
     updateCartUI();
@@ -1963,7 +2162,6 @@ function startNewOrder() {
 
 /* =========================================================
    ACTIVE ORDER
-   Local recovery for 2 hours.
 ========================================================= */
 
 function loadActiveOrder() {
@@ -2039,6 +2237,7 @@ function loadActiveOrder() {
             error
         );
 
+
         clearActiveOrder();
 
     }
@@ -2076,6 +2275,7 @@ function clearActiveOrder() {
     state.activeOrder =
         null;
 
+
     localStorage.removeItem(
         "cafe_active_order"
     );
@@ -2084,7 +2284,7 @@ function clearActiveOrder() {
 
 
 /* =========================================================
-   API - GET
+   API GET
 ========================================================= */
 
 async function apiGet(
@@ -2142,9 +2342,16 @@ async function apiGet(
             "?" +
             query.toString(),
             {
-                method: "GET",
-                redirect: "follow",
-                cache: "no-store"
+
+                method:
+                    "GET",
+
+                redirect:
+                    "follow",
+
+                cache:
+                    "no-store"
+
             }
         );
 
@@ -2158,17 +2365,13 @@ async function apiGet(
     }
 
 
-    const data =
-        await response.json();
-
-
-    return data;
+    return await response.json();
 
 }
 
 
 /* =========================================================
-   API - POST
+   API POST
 ========================================================= */
 
 async function apiPost(
@@ -2183,11 +2386,6 @@ async function apiPost(
 
     }
 
-
-    /*
-     * text/plain avoids unnecessary
-     * CORS preflight with Apps Script.
-     */
 
     const response =
         await fetch(
@@ -2235,9 +2433,6 @@ async function apiPost(
 
 function bindEvents() {
 
-    setupCategories();
-
-
     if (DOM.searchInput) {
 
         DOM.searchInput.addEventListener(
@@ -2247,12 +2442,14 @@ function bindEvents() {
                 state.search =
                     DOM.searchInput.value;
 
+
                 if (DOM.clearSearch) {
 
                     DOM.clearSearch.hidden =
                         !state.search;
 
                 }
+
 
                 renderMenu();
 
@@ -2280,10 +2477,13 @@ function bindEvents() {
 
                 clearSearch();
 
+
                 state.activeCategory =
                     "all";
 
+
                 activateAllCategory();
+
 
                 renderMenu();
 
@@ -2470,7 +2670,7 @@ function activateAllCategory() {
 
     const buttons =
         DOM.categoryNav.querySelectorAll(
-            ".category-btn"
+            ".category-button"
         );
 
 
@@ -2478,29 +2678,16 @@ function activateAllCategory() {
         button => {
 
             const category =
-                String(
+                normalizeCategory(
                     button.dataset.category ||
                     ""
-                )
-                .trim()
-                .toLowerCase();
+                );
 
 
-            if (
+            button.classList.toggle(
+                "active",
                 category === "all"
-            ) {
-
-                button.classList.add(
-                    "active"
-                );
-
-            } else {
-
-                button.classList.remove(
-                    "active"
-                );
-
-            }
+            );
 
         }
     );
@@ -2540,7 +2727,7 @@ function clearSearch() {
 
 
 /* =========================================================
-   OVERLAY HELPERS
+   OVERLAYS
 ========================================================= */
 
 function showOverlay(
@@ -2637,7 +2824,10 @@ function setPlaceOrderLoading(
             <span>⏳</span>
             `;
 
-    } else {
+    }
+
+
+    else {
 
         DOM.placeOrderButton.innerHTML =
             DOM.placeOrderButton.dataset
@@ -2653,7 +2843,7 @@ function setPlaceOrderLoading(
 
 
 /* =========================================================
-   TABLE REQUIRED STATE
+   TABLE REQUIRED
 ========================================================= */
 
 function showTableRequired() {
@@ -2695,7 +2885,7 @@ function showTableRequired() {
 
 
 /* =========================================================
-   FATAL ERROR
+   ERROR
 ========================================================= */
 
 function showFatalError(
@@ -2789,7 +2979,10 @@ function showToast(
         DOM.toastMessage.textContent =
             message;
 
-    } else {
+    }
+
+
+    else {
 
         DOM.toast.textContent =
             message;
